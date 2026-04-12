@@ -1,5 +1,6 @@
 import apiClient from '../api/apiClient';
 import * as SecureStore from 'expo-secure-store';
+import { ENDPOINTS } from '../constants/Endpoints';
 
 export interface LoginResponse {
   access: string;
@@ -23,7 +24,7 @@ const authService = {
    */
   login: async (email: string, password: string): Promise<LoginResponse> => {
     try {
-      const response = await apiClient.post<LoginResponse>('/auth/login/', {
+      const response = await apiClient.post<LoginResponse>(ENDPOINTS.AUTH.LOGIN, {
         email: email,
         password,
       });
@@ -50,7 +51,7 @@ const authService = {
    */
   register: async (userData: any): Promise<LoginResponse> => {
     try {
-      const response = await apiClient.post<LoginResponse>('/auth/register/', userData);
+      const response = await apiClient.post<LoginResponse>(ENDPOINTS.AUTH.REGISTER, userData);
 
       if (response.data.access) {
         await SecureStore.setItemAsync('accessToken', response.data.access);
@@ -71,7 +72,7 @@ const authService = {
    */
   logout: async (): Promise<void> => {
     try {
-      await apiClient.post('/auth/logout/');
+      await apiClient.post(ENDPOINTS.AUTH.LOGOUT);
     } catch (error) {
       console.warn('Error notifying logout to backend', error);
     } finally {

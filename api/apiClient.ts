@@ -1,6 +1,7 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
+import { ENDPOINTS } from '../constants/Endpoints';
 
 const apiClient = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL,
@@ -43,7 +44,7 @@ apiClient.interceptors.response.use(
         }
 
         // Intentar obtener un nuevo access token
-        const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/auth/refresh/`, {
+        const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}${ENDPOINTS.AUTH.REFRESH}`, {
           refresh: refreshToken,
         });
 

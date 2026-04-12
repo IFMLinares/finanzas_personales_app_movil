@@ -1,4 +1,5 @@
 import apiClient from '@/api/apiClient';
+import { ENDPOINTS } from '../constants/Endpoints';
 
 export interface Transaction {
   id: string | number;
@@ -41,7 +42,7 @@ class FinanceService {
    */
   async getDashboardSummary(): Promise<DashboardResponse | null> {
     try {
-      const response = await apiClient.get<DashboardResponse>('/finance/dashboard/summary/');
+      const response = await apiClient.get<DashboardResponse>(ENDPOINTS.FINANCE.DASHBOARD_SUMMARY);
       return response.data;
     } catch (error) {
       console.error('Error fetching dashboard summary:', error);
@@ -55,7 +56,7 @@ class FinanceService {
    */
   async getRecentTransactions(): Promise<Transaction[]> {
     try {
-      const response = await apiClient.get<Transaction[]>('/transactions/');
+      const response = await apiClient.get<Transaction[]>(ENDPOINTS.TRANSACTIONS.BASE);
       
       const data = Array.isArray(response.data) ? response.data : [];
       
