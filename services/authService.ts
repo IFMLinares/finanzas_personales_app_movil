@@ -1,0 +1,75 @@
+import apiClient from '../api/apiClient';
+import * as SecureStore from 'expo-secure-store';
+
+export interface LoginResponse {
+  access: string;
+  refresh: string;
+}
+
+export interface AuthUser {
+  email: string;
+  role: string;
+}
+
+const authService = {
+  /**
+   * Inicia sesión y almacena los tokens de forma segura.
+   */
+  login: async (email: string, password: string): Promise<LoginResponse> => {
+    try {
+      const response = await apiClient.post<LoginResponse>('/auth/login/', {
+        email: email,
+        password,
+      });
+
+      if (response.data.access) {
+        await SecureStore.setItemAsync('accessToken', response.data.access);
+        await SecureStore.setItemAsync('refreshToken', response.data.refresh);
+      }
+
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        console.error('SERVER ERROR DATA:', error.response.data);
+        console.error('SERVER ERROR STATUS:', error.response.status);
+      } else {
+        console.error('NETWORK OR CONFIG ERROR:', error.message);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Registra un nuevo usuario (Placeholder: verificar si el backend tiene esta ruta)
+   */
+  register: async (userData: any): Promise<any> => {
+    // Nota: El backend actual no parece tener implementado /api/auth/register/
+    // Se deja como estructura para el futuro.
+    const response = await apiClient.post('/auth/register/', userData);
+    return response.data;
+  },
+
+  /**
+   * Cierra sesión eliminando los tokens y notificando al backend.
+   */
+  logout: async (): Promise<void> => {
+    try {
+      await apiClient.post('/auth/logout/');
+    } catch (error) {
+      console.warn('Error notifying logout to backend', error);
+    } finally {
+      await SecureStore.deleteItemAsync('accessToken');
+      await SecureStore.deleteItemAsync('refreshToken');
+    }
+  },
+
+  /**
+   * Verifica si hay una sesión activa en el almacenamiento local.
+   */
+  hasStoredSession: async (): Promise<boolean> => {
+    const token = await SecureStore.getItemAsync('accessToken');
+    return !!token;
+  },
+};
+
+export default authService;

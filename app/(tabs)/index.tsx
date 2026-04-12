@@ -4,12 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Typography } from '@/components/ui/Typography';
 import { financeService, Transaction, BalanceSummary } from '@/services/financeService';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [balance, setBalance] = useState<BalanceSummary | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showBalance, setShowBalance] = useState(true);
+  const { signOut } = useAuth();
 
   useEffect(() => {
     loadData();
@@ -46,12 +48,20 @@ export default function DashboardScreen() {
         {/* Header Section */}
         <View className="flex-row justify-between items-center mt-4 mb-8">
           <View>
-            <Typography variant="caption">Bienvenido de nuevo,</Typography>
-            <Typography variant="h2" weight="bold">Dashboard</Typography>
+            <Typography variant="caption" className="text-gray-400">Bienvenido de nuevo,</Typography>
+            <Typography variant="h2" weight="bold" className="text-white">Dashboard</Typography>
           </View>
-          <TouchableOpacity className="w-12 h-12 rounded-full bg-gray-800 justify-center items-center border border-gray-700">
-            <Ionicons name="notifications-outline" size={24} color="white" />
-          </TouchableOpacity>
+          <View className="flex-row gap-2">
+            <TouchableOpacity 
+              onPress={signOut}
+              className="w-12 h-12 rounded-full bg-gray-800 justify-center items-center border border-gray-700"
+            >
+              <Ionicons name="log-out-outline" size={24} color="#f04438" />
+            </TouchableOpacity>
+            <TouchableOpacity className="w-12 h-12 rounded-full bg-gray-800 justify-center items-center border border-gray-700">
+              <Ionicons name="notifications-outline" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Main Balance Card */}
