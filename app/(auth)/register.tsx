@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { parseApiError } from '../../utils/errorUtils';
 
 export default function RegisterScreen() {
   const [firstName, setFirstName] = useState('');
@@ -13,6 +14,7 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   
   const { signUp } = useAuth();
   const router = useRouter();
@@ -36,6 +38,8 @@ export default function RegisterScreen() {
     }
 
     setIsLoading(true);
+    setErrors({}); // Limpiar errores previos
+
     try {
       await signUp({
         email,
@@ -46,18 +50,15 @@ export default function RegisterScreen() {
       });
       // La redirección se maneja automáticamente en el AuthContext al detectar el cambio de estado de 'user'
     } catch (error: any) {
-      console.error(error);
-      let message = 'Ocurrió un error al intentar registrarte.';
+      const parsed = parseApiError(error);
       
-      // Manejo de errores específicos del backend
-      if (error.response?.data) {
-        const data = error.response.data;
-        if (data.email) message = 'Este correo ya está registrado.';
-        else if (data.password) message = data.password[0];
-        else if (data.detail) message = data.detail;
+      // Si hay errores por campo, los seteamos en el estado
+      if (Object.keys(parsed.errors).length > 0) {
+        setErrors(parsed.errors);
+      } else {
+        // Si es un error general, usamos Alert
+        Alert.alert('Error de registro', parsed.message);
       }
-      
-      Alert.alert('Error de registro', message);
     } finally {
       setIsLoading(false);
     }
@@ -88,6 +89,7 @@ export default function RegisterScreen() {
                     placeholder="Juan"
                     value={firstName}
                     onChangeText={setFirstName}
+                    error={errors.first_name}
                   />
                 </View>
                 <View className="flex-1">
@@ -96,6 +98,7 @@ export default function RegisterScreen() {
                     placeholder="Pérez"
                     value={lastName}
                     onChangeText={setLastName}
+                    error={errors.last_name}
                   />
                 </View>
               </View>
@@ -107,6 +110,7 @@ export default function RegisterScreen() {
                 autoCapitalize="none"
                 value={email}
                 onChangeText={setEmail}
+                error={errors.email}
               />
               
               <Input
@@ -115,6 +119,7 @@ export default function RegisterScreen() {
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
+                error={errors.password}
               />
               
               <Input
@@ -123,6 +128,7 @@ export default function RegisterScreen() {
                 secureTextEntry
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
+                error={errors.password_confirm}
               />
               
               <View className="mt-2 mb-6">

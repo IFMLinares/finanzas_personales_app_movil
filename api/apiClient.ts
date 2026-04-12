@@ -31,7 +31,11 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
 
     // Si recibimos un 401 y no hemos reintentado ya esta petición
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // ADEMÁS: No intentamos refrescar si la petición original fue a rutas de AUTH (login/register)
+    const isAuthRequest = originalRequest.url?.includes(ENDPOINTS.AUTH.LOGIN) || 
+                         originalRequest.url?.includes(ENDPOINTS.AUTH.REGISTER);
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRequest) {
       originalRequest._retry = true;
 
       try {

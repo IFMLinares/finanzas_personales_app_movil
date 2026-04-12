@@ -5,11 +5,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { parseApiError } from '../../utils/errorUtils';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const { signIn } = useAuth();
 
   const handleLogin = async () => {
@@ -19,13 +21,20 @@ export default function LoginScreen() {
     }
 
     setIsLoading(true);
+    setErrors({}); // Limpiar errores previos
+
     try {
       await signIn(email, password);
-      // El AuthContext manejara la redirección automáticamente
     } catch (error: any) {
-      console.error(error);
-      const message = error.response?.data?.detail || 'Correo o contraseña incorrectos.';
-      Alert.alert('Error de acceso', message);
+      const parsed = parseApiError(error);
+      
+      // Si hay errores por campo, los seteamos en el estado
+      if (Object.keys(parsed.errors).length > 0) {
+        setErrors(parsed.errors);
+      } else {
+        // Si es un error general (ej: credenciales o servidor), usamos Alert
+        Alert.alert('Error de acceso', parsed.message);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -56,6 +65,7 @@ export default function LoginScreen() {
                 autoCapitalize="none"
                 value={email}
                 onChangeText={setEmail}
+                error={errors.email || errors.username}
               />
               <Input
                 label="Contraseña"
@@ -63,6 +73,7 @@ export default function LoginScreen() {
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
+                error={errors.password}
               />
               
               <TouchableOpacity className="self-end mb-6">
