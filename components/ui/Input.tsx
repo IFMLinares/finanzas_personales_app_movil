@@ -1,13 +1,30 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TextInputProps } from 'react-native';
+import { View, Text, TextInput, TextInputProps, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
+  showPasswordToggle?: boolean;
 }
 
-export function Input({ label, error, onFocus, onBlur, ...props }: InputProps) {
+export function Input({ 
+  label, 
+  error, 
+  onFocus, 
+  onBlur, 
+  secureTextEntry,
+  autoCapitalize,
+  ...props 
+}: InputProps) {
   const [isFocused, setIsFocused] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+  // Determinar si es un campo de contraseña y aplicar reglas de usuario
+  const isPassword = secureTextEntry || props.textContentType === 'password';
+  
+  // Deshabilitar autocapitalización en contraseñas por defecto si no se especifica
+  const effectiveAutoCapitalize = isPassword ? 'none' : autoCapitalize;
 
   return (
     <View className="mb-4">
@@ -22,8 +39,10 @@ export function Input({ label, error, onFocus, onBlur, ...props }: InputProps) {
         }`}
       >
         <TextInput
-          className="flex-1 text-white font-[Outfit_400Regular] text-base"
+          className="flex-1 text-white font-[Outfit_400Regular] text-base h-full"
           placeholderTextColor="#8A99AF"
+          secureTextEntry={isPassword && !isPasswordVisible}
+          autoCapitalize={effectiveAutoCapitalize}
           onFocus={(e) => {
             setIsFocused(true);
             onFocus?.(e);
@@ -34,6 +53,19 @@ export function Input({ label, error, onFocus, onBlur, ...props }: InputProps) {
           }}
           {...props}
         />
+        
+        {isPassword && (
+          <TouchableOpacity 
+            onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+            className="h-full justify-center pl-2"
+          >
+            <Ionicons 
+              name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'} 
+              size={22} 
+              color={isPasswordVisible ? '#3C50E0' : '#8A99AF'} 
+            />
+          </TouchableOpacity>
+        )}
       </View>
       {error && (
         <Text className="text-red-500 text-xs mt-1 font-[Outfit_400Regular]">

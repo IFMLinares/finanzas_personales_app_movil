@@ -4,6 +4,12 @@ import * as SecureStore from 'expo-secure-store';
 export interface LoginResponse {
   access: string;
   refresh: string;
+  user?: {
+    email: string;
+    first_name: string;
+    last_name: string;
+    role: string;
+  };
 }
 
 export interface AuthUser {
@@ -40,13 +46,24 @@ const authService = {
   },
 
   /**
-   * Registra un nuevo usuario (Placeholder: verificar si el backend tiene esta ruta)
+   * Registra un nuevo usuario e inicia sesión automáticamente con los tokens recibidos.
    */
-  register: async (userData: any): Promise<any> => {
-    // Nota: El backend actual no parece tener implementado /api/auth/register/
-    // Se deja como estructura para el futuro.
-    const response = await apiClient.post('/auth/register/', userData);
-    return response.data;
+  register: async (userData: any): Promise<LoginResponse> => {
+    try {
+      const response = await apiClient.post<LoginResponse>('/auth/register/', userData);
+
+      if (response.data.access) {
+        await SecureStore.setItemAsync('accessToken', response.data.access);
+        await SecureStore.setItemAsync('refreshToken', response.data.refresh);
+      }
+
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        console.error('REGISTRATION ERROR DATA:', error.response.data);
+      }
+      throw error;
+    }
   },
 
   /**

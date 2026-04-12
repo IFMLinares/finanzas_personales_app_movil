@@ -7,6 +7,7 @@ interface AuthContextType {
   user: any | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signUp: (userData: any) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -71,6 +72,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signUp = async (userData: any) => {
+    setIsLoading(true);
+    try {
+      const response = await authService.register(userData);
+      setUser({ email: userData.email, ...(response.user || {}) });
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const signOut = async () => {
     await authService.logout();
     setUser(null);
@@ -82,6 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         isLoading,
         signIn,
+        signUp,
         signOut,
       }}
     >

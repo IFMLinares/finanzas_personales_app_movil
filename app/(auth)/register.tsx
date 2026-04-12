@@ -2,40 +2,62 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '../../contexts/AuthContext';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 
 export default function RegisterScreen() {
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  const { signUp } = useAuth();
   const router = useRouter();
 
   const handleRegister = async () => {
-    if (!name || !email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Por favor completa todos los campos.');
+    // 1. Validaciones de campos obligatorios
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
+      Alert.alert('Campos requeridos', 'Por favor completa todos los campos para continuar.');
+      return;
+    }
+
+    // 2. Esquema mínimo de seguridad (Solicitado: Validar longitud y contraseñas iguales)
+    if (password.length < 8) {
+      Alert.alert('Seguridad', 'La contraseña debe tener al menos 8 caracteres por seguridad.');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Las contraseñas no coinciden.');
+      Alert.alert('Error', 'Las contraseñas no coinciden. Por favor verifícalas.');
       return;
     }
 
     setIsLoading(true);
     try {
-      // Nota: El backend de Django actual no tiene implementado el registro público.
-      // Simularemos un retraso y daremos un mensaje informativo.
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      Alert.alert(
-        'Registro no habilitado', 
-        'El registro público está desactivado temporalmente en el servidor. Por favor, contacta al administrador.',
-        [{ text: 'OK', onPress: () => router.push('/(auth)/login') }]
-      );
-    } catch (error) {
-      Alert.alert('Error', 'Ocurrió un error al intentar registrarte.');
+      await signUp({
+        email,
+        password,
+        password_confirm: confirmPassword,
+        first_name: firstName,
+        last_name: lastName
+      });
+      // La redirección se maneja automáticamente en el AuthContext al detectar el cambio de estado de 'user'
+    } catch (error: any) {
+      console.error(error);
+      let message = 'Ocurrió un error al intentar registrarte.';
+      
+      // Manejo de errores específicos del backend
+      if (error.response?.data) {
+        const data = error.response.data;
+        if (data.email) message = 'Este correo ya está registrado.';
+        else if (data.password) message = data.password[0];
+        else if (data.detail) message = data.detail;
+      }
+      
+      Alert.alert('Error de registro', message);
     } finally {
       setIsLoading(false);
     }
@@ -59,12 +81,25 @@ export default function RegisterScreen() {
 
           <View className="bg-[#24303F] p-6 rounded-3xl border border-[#2E3A47]">
             <View className="mb-6">
-              <Input
-                label="Nombre Completo"
-                placeholder="Juan Pérez"
-                value={name}
-                onChangeText={setName}
-              />
+              <View className="flex-row space-x-4 mb-4">
+                <View className="flex-1">
+                  <Input
+                    label="Nombre"
+                    placeholder="Juan"
+                    value={firstName}
+                    onChangeText={setFirstName}
+                  />
+                </View>
+                <View className="flex-1">
+                  <Input
+                    label="Apellido"
+                    placeholder="Pérez"
+                    value={lastName}
+                    onChangeText={setLastName}
+                  />
+                </View>
+              </View>
+
               <Input
                 label="Correo Electrónico"
                 placeholder="ejemplo@correo.com"
@@ -73,13 +108,15 @@ export default function RegisterScreen() {
                 value={email}
                 onChangeText={setEmail}
               />
+              
               <Input
                 label="Contraseña"
-                placeholder="••••••••"
+                placeholder="Mín. 8 caracteres"
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
               />
+              
               <Input
                 label="Confirmar Contraseña"
                 placeholder="••••••••"
