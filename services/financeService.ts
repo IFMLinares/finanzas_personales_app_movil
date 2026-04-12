@@ -1,83 +1,74 @@
+import apiClient from '@/api/apiClient';
+
 export interface Transaction {
-  id: string;
-  title: string;
-  amount: number;
-  category: string;
+  id: string | number;
+  account: number | string;
+  category: number | string | null;
+  type: 'IN' | 'EX' | 'TR';
+  amount: string | number;
   date: string;
-  type: 'income' | 'expense';
-  icon: string;
+  notes?: string;
+  display_title?: string;
+  display_type?: 'income' | 'expense';
+  display_icon?: string;
 }
 
-export interface BalanceSummary {
-  totalBalance: number;
-  monthlyIncome: number;
-  monthlyExpenses: number;
+export interface DashboardResponse {
+  balances: {
+    USD: number;
+    EUR: number;
+    USDT: number;
+    VES: number;
+  };
+  rates: {
+    USD: number;
+    EUR: number;
+    USDT: number;
+  };
+  currency_symbols: {
+    [key: string]: string;
+  };
+  monthly_stats: {
+    income_usd: number;
+    expenses_usd: number;
+  };
 }
 
 class FinanceService {
   /**
-   * Obtiene el resumen del balance del usuario.
-   * En una versión real, esto conectaría con una API o base de datos.
+   * Obtiene el resumen multimoneda del Dashboard.
+   * Nueva ruta modularizada: /finance/dashboard/summary/
    */
-  async getBalanceSummary(): Promise<BalanceSummary> {
-    // Simulamos un retraso de red
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          totalBalance: 12450.85,
-          monthlyIncome: 4500.00,
-          monthlyExpenses: 2150.20,
-        });
-      }, 500);
-    });
+  async getDashboardSummary(): Promise<DashboardResponse | null> {
+    try {
+      const response = await apiClient.get<DashboardResponse>('/finance/dashboard/summary/');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching dashboard summary:', error);
+      return null;
+    }
   }
 
   /**
-   * Obtiene la lista de transacciones recientes.
+   * Obtiene la lista de transacciones reales del usuario.
+   * Ruta modularizada: /transactions/
    */
   async getRecentTransactions(): Promise<Transaction[]> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([
-          {
-            id: '1',
-            title: 'Suscripción Netflix',
-            amount: 15.99,
-            category: 'Entretenimiento',
-            date: 'Hoy, 10:30 AM',
-            type: 'expense',
-            icon: 'tv-outline',
-          },
-          {
-            id: '2',
-            title: 'Depósito Nómina',
-            amount: 2200.00,
-            category: 'Salario',
-            date: 'Ayer',
-            type: 'income',
-            icon: 'cash-outline',
-          },
-          {
-            id: '3',
-            title: 'Compra Supermercado',
-            amount: 85.40,
-            category: 'Alimentación',
-            date: '10 Abr',
-            type: 'expense',
-            icon: 'cart-outline',
-          },
-          {
-            id: '4',
-            title: 'Transferencia Bizum',
-            amount: 20.00,
-            category: 'Varios',
-            date: '09 Abr',
-            type: 'expense',
-            icon: 'send-outline',
-          },
-        ]);
-      }, 800);
-    });
+    try {
+      const response = await apiClient.get<Transaction[]>('/transactions/');
+      
+      const data = Array.isArray(response.data) ? response.data : [];
+      
+      return data.map(tx => ({
+        ...tx,
+        display_title: tx.notes || (tx.type === 'IN' ? 'Ingreso' : tx.type === 'EX' ? 'Gasto' : 'Transferencia'),
+        display_type: (tx.type === 'IN' ? 'income' : 'expense') as 'income' | 'expense',
+        display_icon: tx.type === 'IN' ? 'cash-outline' : tx.type === 'EX' ? 'cart-outline' : 'swap-horizontal-outline',
+      })).slice(0, 10);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      return [];
+    }
   }
 }
 
