@@ -29,18 +29,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Diseño V3',
+          title: 'Dashboard',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'rocket' : 'rocket-outline'} size={24} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="v2"
-        options={{
-          title: 'Diseño V2',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'color-palette' : 'color-palette-outline'} size={24} color={color} />
           ),
         }}
       />

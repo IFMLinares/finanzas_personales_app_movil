@@ -8,13 +8,15 @@ interface FABProps {
   style?: ViewStyle;
   backgroundColor?: string;
   iconColor?: string;
+  iconName?: keyof typeof Ionicons.glyphMap;
 }
 
 export function FAB({ 
   onPress, 
   style, 
   backgroundColor = "#465fff", 
-  iconColor = "#fff" 
+  iconColor = "#fff",
+  iconName = "add"
 }: FABProps) {
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -32,7 +34,7 @@ export function FAB({
         style
       ]}
     >
-      <Ionicons name="add" size={32} color={iconColor} />
+      <Ionicons name={iconName as any} size={32} color={iconColor} />
     </TouchableOpacity>
   );
 }
