@@ -5,6 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { Typography } from '../../components/ui/Typography';
+import { GlassCard } from '../../components/ui/GlassCard';
 import { parseApiError } from '../../utils/errorUtils';
 
 export default function LoginScreen() {
@@ -41,25 +43,25 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#1A222C]">
+    <SafeAreaView className="flex-1 bg-gray-950">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-6 py-10">
-          <View className="mb-12 items-center">
-            <Text className="text-white text-4xl font-[Outfit_700Bold] mb-2">
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-8 py-12">
+          <View className="mb-16 mt-10">
+            <Typography variant="h1" weight="bold" className="text-white mb-2">
               Finanzas
-            </Text>
-            <Text className="text-[#8A99AF] text-base font-[Outfit_400Regular]">
-              Ingresa a tu cuenta para continuar
-            </Text>
+            </Typography>
+            <Typography variant="body" className="text-ink-secondary">
+              Gestiona tu capital con precisión tecnológica.
+            </Typography>
           </View>
 
-          <View className="bg-[#24303F] p-6 rounded-3xl border border-[#2E3A47]">
+          <GlassCard intensity="medium" className="p-8">
             <View className="mb-6">
               <Input
-                label="Correo Electrónico"
+                label="Identidad Digital (Email)"
                 placeholder="ejemplo@correo.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -68,7 +70,7 @@ export default function LoginScreen() {
                 error={errors.email || errors.username}
               />
               <Input
-                label="Contraseña"
+                label="Clave de Acceso"
                 placeholder="••••••••"
                 secureTextEntry
                 value={password}
@@ -76,37 +78,37 @@ export default function LoginScreen() {
                 error={errors.password}
               />
               
-              <TouchableOpacity className="self-end mb-6">
-                <Text className="text-[#3C50E0] font-[Outfit_600SemiBold] text-sm">
+              <TouchableOpacity className="self-end mb-8">
+                <Typography variant="label" weight="bold" className="text-vault-usd">
                   ¿Olvidaste tu contraseña?
-                </Text>
+                </Typography>
               </TouchableOpacity>
 
               <Button
-                title="Iniciar Sesión"
+                title="Iniciar sesión"
                 onPress={handleLogin}
                 loading={isLoading}
               />
             </View>
 
             <View className="flex-row justify-center items-center">
-              <Text className="text-[#8A99AF] font-[Outfit_400Regular] mr-2">
-                ¿No tienes una cuenta?
-              </Text>
+              <Typography variant="caption" className="text-ink-muted mr-2">
+                ¿Nuevo en la plataforma?
+              </Typography>
               <Link href="/(auth)/register" asChild>
                 <TouchableOpacity>
-                  <Text className="text-[#3C50E0] font-[Outfit_600SemiBold]">
-                    Regístrate
-                  </Text>
+                  <Typography variant="caption" weight="bold" className="text-vault-usd">
+                    Crea una cuenta
+                  </Typography>
                 </TouchableOpacity>
               </Link>
             </View>
-          </View>
+          </GlassCard>
 
-          <View className="flex-1 justify-end items-center mt-10">
-            <Text className="text-[#5B6B7C] text-xs font-[Outfit_400Regular]">
-              © 2026 Sistema de Finanzas Personales
-            </Text>
+          <View className="flex-1 justify-end items-center mt-12">
+            <Typography variant="label" className="text-ink-muted">
+              © 2026 Ecosistema Finanzas Premium
+            </Typography>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

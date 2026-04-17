@@ -73,61 +73,67 @@ export function SelectModal({
           onPress={handleClose} 
         />
         <Animated.View 
-          className="bg-gray-900 rounded-t-[40px] p-8 border-t border-gray-800 max-h-[80%]"
+          className="bg-gray-950 rounded-t-[40px] p-8 border-t border-white/5 max-h-[80%]"
           style={animatedStyle}
         >
           {/* Indicator */}
-          <View className="w-12 h-1 bg-gray-700 rounded-full self-center mb-8" />
+          <View className="w-12 h-0.5 bg-white/10 rounded-full self-center mb-8" />
           
-          <Typography variant="h3" weight="bold" className="mb-6">{title}</Typography>
+          <Typography variant="h3" weight="bold" className="mb-8 text-white">
+            {title}
+          </Typography>
           
-          <ScrollView showsVerticalScrollIndicator={false} className="gap-2">
+          <ScrollView showsVerticalScrollIndicator={false} className="gap-3">
             {options.map((option) => (
               <TouchableOpacity 
                 key={option.id}
                 onPress={() => { onSelect(option); handleClose(); }}
-                className={`flex-row items-center p-5 rounded-3xl border ${selectedValue === option.id ? 'bg-brand-500/10 border-brand-500' : 'bg-gray-800 border-gray-700'}`}
+                className={`flex-row items-center p-5 rounded-3xl border ${
+                  selectedValue === option.id 
+                    ? 'bg-brand-500/10 border-brand-500' 
+                    : 'bg-white/5 border-white/5'
+                }`}
               >
                 {option.icon && (
                   <View 
                     className="w-10 h-10 rounded-2xl justify-center items-center mr-4"
-                    style={{ backgroundColor: option.color ? `${option.color}20` : '#465fff20' }}
+                    style={{ backgroundColor: option.color ? `${option.color}20` : 'rgba(255,255,255,0.05)' }}
                   >
-                    <Ionicons name={option.icon as any} size={20} color={option.color || '#465fff'} />
+                    <Ionicons 
+                      name={option.icon as any} 
+                      size={20} 
+                      color={option.color || (selectedValue === option.id ? '#465fff' : '#94a3b8')} 
+                    />
                   </View>
                 )}
                 <View className="flex-1">
-                  <Typography weight={selectedValue === option.id ? "bold" : "semibold"} className={selectedValue === option.id ? 'text-brand-500' : 'text-white'}>
+                  <Typography 
+                    variant="body"
+                    weight={selectedValue === option.id ? "bold" : "semibold"} 
+                    className={selectedValue === option.id ? 'text-brand-500' : 'text-white'}
+                  >
                     {option.label}
                   </Typography>
                   {option.sublabel && (
-                    <Typography variant="caption" className="text-gray-400">{option.sublabel}</Typography>
+                    <Typography variant="caption" className="text-ink-tertiary mt-0.5">
+                      {option.sublabel}
+                    </Typography>
                   )}
                 </View>
                 {selectedValue === option.id && (
-                  <Ionicons name="checkmark-circle" size={24} color="#465fff" />
+                  <View className="w-5 h-5 rounded-full bg-brand-500 justify-center items-center">
+                    <Ionicons name="checkmark" size={12} color="white" />
+                  </View>
                 )}
               </TouchableOpacity>
             ))}
-
-            {footerLabel && onFooterPress && (
-              <TouchableOpacity 
-                onPress={() => { handleClose(); onFooterPress(); }}
-                className="flex-row items-center p-5 rounded-3xl border border-dashed border-gray-700 mt-2"
-              >
-                <View className="w-10 h-10 rounded-2xl bg-gray-800 justify-center items-center mr-4">
-                  <Ionicons name="add" size={20} color="#667085" />
-                </View>
-                <Typography weight="semibold" className="text-gray-400">{footerLabel}</Typography>
-              </TouchableOpacity>
-            )}
           </ScrollView>
 
           <TouchableOpacity 
             onPress={handleClose}
-            className="mt-6 py-4 bg-gray-800 rounded-2xl items-center"
+            className="mt-8 py-4 bg-white/5 rounded-2xl items-center border border-white/5"
           >
-            <Typography weight="semibold" className="text-gray-400">Cancelar</Typography>
+            <Typography weight="bold" className="text-ink-secondary">Cancelar</Typography>
           </TouchableOpacity>
         </Animated.View>
       </View>

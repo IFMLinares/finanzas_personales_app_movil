@@ -6,6 +6,8 @@ import { Typography } from '@/components/ui/Typography';
 import { financeService, Transaction, DashboardResponse } from '@/services/financeService';
 import { useAuth } from '@/contexts/AuthContext';
 import { FAB } from '@/components/ui/FAB';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { LinearGradient } from 'expo-linear-gradient';
 
 type CurrencyType = 'USD' | 'EUR' | 'USDT';
 
@@ -22,28 +24,28 @@ export default function DashboardScreen() {
   const { signOut } = useAuth();
 
   // Queries con TanStack Query
-  const { 
-    data: dashboardData, 
-    isLoading: loadingSummary, 
-    refetch: refetchSummary 
+  const {
+    data: dashboardData,
+    isLoading: loadingSummary,
+    refetch: refetchSummary
   } = useQuery({
     queryKey: ['dashboardSummary'],
     queryFn: () => financeService.getDashboardSummary(),
   });
 
-  const { 
-    data: transactions = [], 
-    isLoading: loadingTransactions, 
-    refetch: refetchTransactions 
+  const {
+    data: transactions = [],
+    isLoading: loadingTransactions,
+    refetch: refetchTransactions
   } = useQuery({
     queryKey: ['recentTransactions'],
     queryFn: () => financeService.getRecentTransactions(),
   });
 
-  const { 
-    data: accounts = [], 
-    isLoading: loadingAccounts, 
-    refetch: refetchAccounts 
+  const {
+    data: accounts = [],
+    isLoading: loadingAccounts,
+    refetch: refetchAccounts
   } = useQuery({
     queryKey: ['accounts'],
     queryFn: () => financeService.getAccounts(),
@@ -78,215 +80,213 @@ export default function DashboardScreen() {
   const bcvRate = dashboardData?.rates?.USD || 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-900">
-      <ScrollView 
-        className="flex-1 px-5" 
+    <SafeAreaView className="flex-1 bg-gray-950">
+      <ScrollView
+        className="flex-1 px-6"
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#465fff" />
         }
       >
-        
+
         {/* Header Section */}
-        <View className="flex-row justify-between items-center mt-4 mb-8">
+        <View className="flex-row justify-between items-center mt-6 mb-10">
           <View>
-            <Typography variant="caption" className="text-gray-400">Panel de Control</Typography>
-            <Typography variant="h2" weight="bold" className="text-white">Mis Finanzas</Typography>
+            <Typography variant="h2" weight="bold" className="text-white">Panel Central</Typography>
+            <Typography variant="caption" className="text-ink-tertiary">Resumen de liquidez global</Typography>
           </View>
-          <View className="flex-row gap-2">
-            <TouchableOpacity 
-              onPress={signOut}
-              className="w-11 h-11 rounded-3xl bg-gray-800 justify-center items-center border border-gray-700"
-            >
-              <Ionicons name="log-out-outline" size={22} color="#f04438" />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={signOut}
+            className="w-12 h-12 rounded-2xl bg-surface-elevated justify-center items-center border border-white/5"
+          >
+            <Ionicons name="log-out-outline" size={22} color="#f43f5e" />
+          </TouchableOpacity>
         </View>
 
-        {/* Main Balance Card (Blue Container) */}
-        <View className="bg-brand-500 rounded-3xl p-6 shadow-xl mb-4">
-          <View className="flex-row justify-between items-center mb-6">
-            <Typography weight="semibold" className="opacity-80">Patrimonio Total</Typography>
-            <View className="flex-row items-center gap-3">
-              {/* Selector de Moneda Estilo Select */}
-              <View className="z-50">
-                <TouchableOpacity 
+        {/* Main Balance Card (The Living Vault) */}
+        <GlassCard intensity="high" className="mb-8 relative" style={{ minHeight: 220 }}>
+          <LinearGradient
+            colors={
+              selectedCurrency === 'USDT' ? ['#14b8a620', '#14b8a605'] :
+                selectedCurrency === 'EUR' ? ['#3b82f620', '#3b82f605'] :
+                  ['#465fff20', '#465fff05']
+            }
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            className="absolute inset-0"
+          />
+
+          <View className="p-6">
+            <View className="flex-row justify-between items-center mb-8">
+              <View className="flex-row items-center">
+                <View
+                  className="w-2 h-2 rounded-full mr-2"
+                  style={{ backgroundColor: selectedCurrency === 'USDT' ? '#14b8a6' : selectedCurrency === 'EUR' ? '#3b82f6' : '#465fff' }}
+                />
+                <Typography variant="label" weight="semibold">Activos Totales</Typography>
+              </View>
+
+              <View className="flex-row items-center gap-2">
+                <TouchableOpacity
                   onPress={() => setShowCurrencyMenu(!showCurrencyMenu)}
-                  className="bg-white/10 px-4 py-2 rounded-2xl flex-row items-center border border-white/5"
+                  className="bg-white/5 px-3 py-1.5 rounded-xl flex-row items-center border border-white/5"
                 >
-                  <Typography variant="label" weight="bold" className="text-white mr-2">{selectedCurrency}</Typography>
-                  <Ionicons name={showCurrencyMenu ? "chevron-up" : "chevron-down"} size={14} color="white" />
+                  <Typography variant="label" weight="bold" className="text-white mr-1.5">{selectedCurrency}</Typography>
+                  <Ionicons name="chevron-down" size={12} color="white" className="opacity-60" />
                 </TouchableOpacity>
 
-                {showCurrencyMenu && (
-                  <View 
-                    className="absolute top-12 right-0 w-28 bg-gray-900 rounded-2xl border border-gray-700 shadow-2xl overflow-hidden"
-                    style={{ zIndex: 1000 }}
+                <TouchableOpacity
+                  onPress={() => setShowBalance(!showBalance)}
+                  className="w-9 h-9 bg-white/5 rounded-xl justify-center items-center border border-white/5"
+                >
+                  <Ionicons name={showBalance ? "eye-outline" : "eye-off-outline"} size={16} color="white" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {showCurrencyMenu && (
+              <View className="absolute top-16 right-6 w-32 bg-surface-overlay rounded-2xl border border-white/10 shadow-2xl z-50 overflow-hidden">
+                {(['USD', 'EUR', 'USDT'] as CurrencyType[]).map((cur) => (
+                  <TouchableOpacity
+                    key={cur}
+                    onPress={() => { setSelectedCurrency(cur); setShowCurrencyMenu(false); }}
+                    className={`p-4 ${selectedCurrency === cur ? 'bg-white/5' : ''} border-b border-white/5`}
                   >
-                    {(['USD', 'EUR', 'USDT'] as CurrencyType[]).map((cur) => (
-                      <TouchableOpacity 
-                        key={cur}
-                        onPress={() => {
-                          setSelectedCurrency(cur);
-                          setShowCurrencyMenu(false);
-                        }}
-                        className={`p-4 items-center ${selectedCurrency === cur ? 'bg-brand-500/10' : ''} border-b border-gray-800/50`}
-                      >
-                        <Typography 
-                          weight={selectedCurrency === cur ? 'bold' : 'regular'}
-                          className={selectedCurrency === cur ? 'text-brand-500' : 'text-gray-300'}
-                        >
-                          {cur}
-                        </Typography>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
+                    <Typography weight={selectedCurrency === cur ? 'bold' : 'regular'} className={selectedCurrency === cur ? 'text-white' : 'text-ink-tertiary'}>
+                      {cur}
+                    </Typography>
+                  </TouchableOpacity>
+                ))}
               </View>
-              {/* Botón de Balance Visible */}
-              <TouchableOpacity 
-                onPress={() => setShowBalance(!showBalance)}
-                className="w-10 h-10 bg-white/10 rounded-2xl justify-center items-center border border-white/5"
-              >
-                <Ionicons name={showBalance ? "eye-outline" : "eye-off-outline"} size={18} color="white" />
-              </TouchableOpacity>
-            </View>
-          </View>
-          
-          <View className="flex-row items-baseline mb-4">
-            <Typography variant="balance" weight="bold" className="text-4xl text-white">
-              {showBalance ? `${currentSymbol}${formatCurrency(currentBalance)}` : '••••••'}
-            </Typography>
-            <Typography className="ml-2 text-white/70 text-lg font-[Outfit_600SemiBold] uppercase">
-              {selectedCurrency}
-            </Typography>
-          </View>
+            )}
 
-          {/* Exchange Rate Pill inside card */}
-          <View className="mb-6 flex-row items-center bg-black/10 self-start px-3 py-1 rounded-full">
-            <Ionicons name="trending-up-outline" size={14} color="white" className="opacity-80" />
-            <Typography variant="caption" className="ml-2 text-white/90">
-              Tasa BCV: 1 USD = {bcvRate.toFixed(2)} VES
-            </Typography>
-          </View>
+            <View className="flex-row items-baseline mb-6">
+              <Typography variant="balance" weight="bold" className="text-white">
+                {showBalance ? `${currentSymbol}${formatCurrency(currentBalance)}` : '••••••'}
+              </Typography>
+              <Typography variant="caption" weight="bold" className="ml-2 text-ink-tertiary">
+                {selectedCurrency}
+              </Typography>
+            </View>
 
-          {/* Integrated Income/Expense Stats inside the card */}
-          <View className="flex-row gap-4">
-            <View className="flex-1 bg-white/10 p-4 rounded-2xl">
-              <Typography variant="caption" className="text-white/70">Ingresos (Mes)</Typography>
-              <View className="flex-row items-center">
-                <Typography weight="bold" className="text-white text-lg">
-                  +{formatCurrency(dashboardData?.monthly_stats?.income_usd || 0)}
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
+                <Ionicons name="stats-chart" size={12} color="#94a3b8" />
+                <Typography variant="label" className="ml-2 lowercase">
+                  BCV: {bcvRate.toFixed(2)} VES
                 </Typography>
-                <Typography variant="label" className="ml-1 text-white/50 text-[10px]">USD</Typography>
               </View>
-            </View>
-            <View className="flex-1 bg-white/10 p-4 rounded-2xl">
-              <Typography variant="caption" className="text-white/70">Gastos (Mes)</Typography>
-              <View className="flex-row items-center">
-                <Typography weight="bold" className="text-white text-lg">
-                  -{formatCurrency(dashboardData?.monthly_stats?.expenses_usd || 0)}
-                </Typography>
-                <Typography variant="label" className="ml-1 text-white/50 text-[10px]">USD</Typography>
+
+              <View className="flex-row gap-4">
+                <View className="items-end">
+                  <Typography variant="label" className="lowercase !opacity-40 mb-0.5">mensual</Typography>
+                  <Typography weight="bold" className="text-emerald-500">
+                    +${formatCurrency(dashboardData?.monthly_stats?.income_usd || 0)}
+                  </Typography>
+                </View>
               </View>
             </View>
           </View>
-        </View>
+        </GlassCard>
 
 
         {/* Mis Cuentas Section */}
-        <View className="mb-8">
-          <View className="flex-row justify-between items-center mb-4">
+        <View className="mb-10">
+          <View className="flex-row justify-between items-end mb-6">
             <View>
+              {/* <Typography variant="label" weight="bold" className="mb-1"></Typography> */}
               <Typography variant="h3" weight="bold">Cuentas</Typography>
-              <Typography variant="caption" className="text-gray-500">Distribución de saldos</Typography>
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => router.push('/accounts/create')}
-              className="bg-brand-500/10 px-4 py-2 rounded-2xl"
+              className="bg-surface-elevated px-4 py-2 rounded-xl border border-white/5"
             >
-              <Typography className="text-brand-500" variant="caption" weight="bold">Gestionar</Typography>
+              <Typography className="text-ink-secondary" variant="caption" weight="bold">Ver todas</Typography>
             </TouchableOpacity>
           </View>
 
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false} 
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
             className="flex-row"
-            contentContainerStyle={{ gap: 12 }}
+            contentContainerStyle={{ gap: 16 }}
           >
             {accounts.length > 0 ? (
               accounts.map((acc) => (
-                <View key={acc.id} className="w-56 bg-gray-800 rounded-3xl p-5 border border-gray-700">
-                  <View className="flex-row items-center justify-between mb-4">
-                    <View className="w-10 h-10 rounded-full bg-gray-900 justify-center items-center mr-3 border border-gray-700">
-                      {acc.currency_detail?.code === 'USDT' ? (
-                        <Typography variant="label" weight="bold" className="text-brand-500 text-[10px]">USDT</Typography>
-                      ) : (
-                        <Typography className="text-xl">
-                          {acc.currency_detail?.code === 'VES' ? '🇻🇪' : 
-                           acc.currency_detail?.code === 'EUR' ? '🇪🇺' : '🇺🇸'}
-                        </Typography>
-                      )}
+                <GlassCard key={acc.id} className="w-64 p-5" intensity="low">
+                  <View className="flex-row items-center justify-between mb-6">
+                    <View className="w-12 h-12 rounded-2xl bg-white/5 justify-center items-center border border-white/5">
+                      <Typography className="text-2xl">
+                        {acc.currency_detail?.code === 'VES' ? '🇻🇪' :
+                          acc.currency_detail?.code === 'EUR' ? '🇪🇺' :
+                            acc.currency_detail?.code === 'USDT' ? '🌐' : '🇺🇸'}
+                      </Typography>
                     </View>
-                    <View className="bg-success-500/20 px-2 py-1 rounded-lg">
-                      <Typography variant="label" className="text-success-500 text-[8px]" weight="bold">Activa</Typography>
+                    <View className="bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-500/20">
+                      <Typography variant="label" className="text-emerald-500 text-[8px]" weight="bold">Activa</Typography>
                     </View>
                   </View>
-                  
-                  <View className="mb-4">
-                    <Typography variant="caption" className="text-gray-500 mb-1">{acc.name}</Typography>
+
+                  <View className="mb-6">
+                    <Typography variant="caption" className="text-ink-tertiary mb-1">{acc.name}</Typography>
                     <Typography variant="h3" weight="bold" numberOfLines={1}>
                       {acc.currency_detail?.symbol} {formatCurrency(typeof acc.balance === 'string' ? parseFloat(acc.balance) : acc.balance)}
                     </Typography>
                   </View>
 
-                  <TouchableOpacity className="flex-row items-center">
-                    <Typography variant="caption" className="text-brand-500 mr-1" weight="semibold">Ver detalles</Typography>
-                    <Ionicons name="chevron-forward" size={14} color="#465fff" />
+                  <TouchableOpacity className="flex-row items-center self-start">
+                    <Typography variant="label" className="text-ink-tertiary mr-1" weight="semibold">Ver detalles</Typography>
+                    <Ionicons name="arrow-forward" size={12} color="#64748b" />
                   </TouchableOpacity>
-                </View>
+                </GlassCard>
               ))
             ) : (
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => router.push('/accounts/create')}
-                className="w-56 bg-gray-800/50 rounded-3xl p-5 border border-dashed border-gray-700 justify-center items-center"
+                className="w-64 h-40 bg-white/5 rounded-3xl border border-dashed border-white/10 justify-center items-center"
               >
                 <Ionicons name="add-circle-outline" size={32} color="#465fff" className="mb-2" />
-                <Typography variant="caption" className="text-gray-400">Agregar Cuenta</Typography>
+                <Typography variant="caption" className="text-ink-tertiary">Vincular cuenta</Typography>
               </TouchableOpacity>
             )}
           </ScrollView>
         </View>
 
         {/* Recent Transactions */}
-        <View className="flex-row justify-between items-center mb-4">
-          <Typography variant="h3" weight="semibold">Transacciones Recientes</Typography>
+        <View className="flex-row justify-between items-end mb-6">
+          <View>
+            <Typography variant="label" weight="bold" className="mb-1">Historial</Typography>
+            <Typography variant="h3" weight="bold">Actividad Reciente</Typography>
+          </View>
           <TouchableOpacity>
-            <Typography className="text-brand-500" weight="semibold">Ver todo</Typography>
+            <Typography className="text-ink-tertiary" weight="bold" variant="caption">Ver todo</Typography>
           </TouchableOpacity>
         </View>
 
-        <View className="bg-gray-800 rounded-3xl p-4 border border-gray-700 mb-6">
+        <View className="mb-10">
           {transactions.length > 0 ? (
             transactions.map((tx, index) => (
-              <TouchableOpacity 
-                key={tx.id} 
-                className={`flex-row items-center justify-between py-4 ${index !== transactions.length - 1 ? 'border-b border-gray-700' : ''}`}
+              <TouchableOpacity
+                key={tx.id}
+                className={`flex-row items-center py-5 ${index !== transactions.length - 1 ? 'border-b border-white/5' : ''}`}
               >
-                <View className="flex-row items-center gap-4">
-                  <View className="w-12 h-12 bg-gray-900 rounded-2xl justify-center items-center">
-                    <Ionicons name={(tx.display_icon || 'cash-outline') as any} size={22} color={tx.display_type === 'income' ? '#12b76a' : '#f04438'} />
+                <View className="flex-row items-center flex-1">
+                  <View className="w-12 h-12 bg-surface-elevated rounded-2xl justify-center items-center border border-white/5">
+                    <Ionicons
+                      name={(tx.display_icon || 'cash-outline') as any}
+                      size={20}
+                      color={tx.display_type === 'income' ? '#10b981' : '#f43f5e'}
+                    />
                   </View>
-                  <View className="flex-1 mr-3">
-                    <Typography weight="semibold" numberOfLines={1}>{tx.display_title || 'Sin descripción'}</Typography>
-                    <Typography variant="caption" className="text-gray-500">{tx.date ? new Date(tx.date).toLocaleDateString() : '--'}</Typography>
+                  <View className="flex-1 ml-4 mr-3">
+                    <Typography weight="bold" numberOfLines={1} className="text-white mb-0.5">{tx.display_title || 'Sin descripción'}</Typography>
+                    <Typography variant="label" className="text-ink-muted lowercase">{tx.date ? new Date(tx.date).toLocaleDateString() : '--'}</Typography>
                   </View>
                 </View>
-                <View className="items-end flex-shrink-0">
-                  <Typography 
-                    weight="bold" 
-                    className={tx.display_type === 'income' ? 'text-success-500' : 'text-white'}
+                <View className="items-end">
+                  <Typography
+                    weight="bold"
+                    className={tx.display_type === 'income' ? 'text-emerald-500' : 'text-white'}
                   >
                     {tx.display_type === 'income' ? '+' : '-'}${parseFloat(tx.amount?.toString() || "0").toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Typography>
@@ -294,8 +294,8 @@ export default function DashboardScreen() {
               </TouchableOpacity>
             ))
           ) : (
-            <View className="py-8 items-center">
-              <Typography className="text-gray-500">No hay transacciones recientes</Typography>
+            <View className="py-12 items-center bg-white/5 rounded-3xl border border-dashed border-white/10">
+              <Typography className="text-ink-muted">Sin movimientos registrados</Typography>
             </View>
           )}
         </View>
@@ -307,7 +307,7 @@ export default function DashboardScreen() {
       {/* Instant FAB Menu (Popup Estilo Select) */}
       {showFabMenu && (
         <View className="absolute bottom-24 right-8 w-48 bg-gray-900 rounded-3xl border border-gray-700 shadow-2xl overflow-hidden z-50">
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => { router.push('/transaction/new'); setShowFabMenu(false); }}
             className="flex-row items-center p-4 border-b border-gray-800"
           >
@@ -316,7 +316,7 @@ export default function DashboardScreen() {
             </View>
             <Typography weight="semibold" className="text-gray-200">Movimiento</Typography>
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => { router.push('/transaction/new?type=TR'); setShowFabMenu(false); }}
             className="flex-row items-center p-4"
           >
@@ -329,9 +329,9 @@ export default function DashboardScreen() {
       )}
 
       {/* Action Components: Green Neon FAB */}
-      <FAB 
-        onPress={() => setShowFabMenu(!showFabMenu)} 
-        backgroundColor="#a3e635"
+      <FAB
+        onPress={() => setShowFabMenu(!showFabMenu)}
+        backgroundColor="#14b8a6"
         iconColor="#000"
         iconName={showFabMenu ? "close" : "add"}
       />

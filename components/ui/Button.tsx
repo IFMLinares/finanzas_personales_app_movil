@@ -27,9 +27,8 @@ export function Button({ label, title, loading, variant = 'primary', style, ...p
         <ActivityIndicator color="#FFFFFF" />
       ) : (
         <Typography 
-          variant="label" 
           weight="bold" 
-          className="text-white text-lg"
+          className="text-white text-lg first-letter:uppercase"
         >
           {text}
         </Typography>

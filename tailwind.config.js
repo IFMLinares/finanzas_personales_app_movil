@@ -25,12 +25,34 @@ module.exports = {
           800: '#1d2939',
           900: '#101828', // Background oscuro principal
           dark: '#0a0d14', // Fondo ultra oscuro
+          950: '#07090e',
+        },
+        ink: {
+          primary: '#ffffff',
+          secondary: '#94a3b8',
+          tertiary: '#64748b',
+          muted: '#475569',
+        },
+        surface: {
+          base: '#101828',
+          elevated: '#1a2231',
+          overlay: '#262f41',
+        },
+        vault: {
+          usd: '#465fff',
+          eur: '#3b82f6',
+          usdt: '#14b8a6',
+          ves: '#f43f5e',
         }
       },
       fontFamily: {
         outfit: ['Outfit_400Regular', 'sans-serif'],
         outfitBold: ['Outfit_700Bold', 'sans-serif'],
         outfitSemiBold: ['Outfit_600SemiBold', 'sans-serif'],
+      },
+      tracking: {
+        'tightest': '-0.05em',
+        'tighter': '-0.03em',
       }
     },
   },

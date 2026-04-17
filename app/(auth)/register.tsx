@@ -5,6 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { Typography } from '../../components/ui/Typography';
+import { GlassCard } from '../../components/ui/GlassCard';
 import { parseApiError } from '../../utils/errorUtils';
 
 export default function RegisterScreen() {
@@ -65,24 +67,24 @@ export default function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#1A222C]">
+    <SafeAreaView className="flex-1 bg-gray-950">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-6 py-10">
-          <View className="mb-8 items-center">
-            <Text className="text-white text-4xl font-[Outfit_700Bold] mb-2">
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-8 py-10">
+          <View className="mb-12 mt-6">
+            <Typography variant="h1" weight="bold" className="text-white mb-2">
               Unirse
-            </Text>
-            <Text className="text-[#8A99AF] text-base font-[Outfit_400Regular]">
-              Crea tu cuenta para gestionar tus finanzas
-            </Text>
+            </Typography>
+            <Typography variant="body" className="text-ink-secondary">
+              Crea tu perfil en el ecosistema financiero.
+            </Typography>
           </View>
 
-          <View className="bg-[#24303F] p-6 rounded-3xl border border-[#2E3A47]">
+          <GlassCard intensity="medium" className="p-8">
             <View className="mb-6">
-              <View className="flex-row space-x-4 mb-4">
+              <View className="flex-row space-x-4 mb-2">
                 <View className="flex-1">
                   <Input
                     label="Nombre"
@@ -104,7 +106,7 @@ export default function RegisterScreen() {
               </View>
 
               <Input
-                label="Correo Electrónico"
+                label="Bóveda Digital (Email)"
                 placeholder="ejemplo@correo.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -114,7 +116,7 @@ export default function RegisterScreen() {
               />
               
               <Input
-                label="Contraseña"
+                label="Clave de Acceso"
                 placeholder="Mín. 8 caracteres"
                 secureTextEntry
                 value={password}
@@ -123,7 +125,7 @@ export default function RegisterScreen() {
               />
               
               <Input
-                label="Confirmar Contraseña"
+                label="Confirmar Clave"
                 placeholder="••••••••"
                 secureTextEntry
                 value={confirmPassword}
@@ -131,32 +133,32 @@ export default function RegisterScreen() {
                 error={errors.password_confirm}
               />
               
-              <View className="mt-2 mb-6">
-                <Text className="text-[#8A99AF] text-xs font-[Outfit_400Regular]">
-                  Al registrarte, aceptas nuestros Términos de Servicio y Política de Privacidad.
-                </Text>
+              <View className="mt-2 mb-8 px-1">
+                <Typography variant="caption" className="text-ink-muted leading-5">
+                  Al registrarte, declaras conocer los términos de seguridad del sistema.
+                </Typography>
               </View>
 
               <Button
-                title="Crear Cuenta"
+                title="Generar Bóveda"
                 onPress={handleRegister}
                 loading={isLoading}
               />
             </View>
 
             <View className="flex-row justify-center items-center">
-              <Text className="text-[#8A99AF] font-[Outfit_400Regular] mr-2">
-                ¿Ya tienes una cuenta?
-              </Text>
+              <Typography variant="caption" className="text-ink-muted mr-2">
+                ¿Ya tienes acceso?
+              </Typography>
               <Link href="/(auth)/login" asChild>
                 <TouchableOpacity>
-                  <Text className="text-[#3C50E0] font-[Outfit_600SemiBold]">
+                  <Typography variant="caption" weight="bold" className="text-brand-500">
                     Inicia Sesión
-                  </Text>
+                  </Typography>
                 </TouchableOpacity>
               </Link>
             </View>
-          </View>
+          </GlassCard>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

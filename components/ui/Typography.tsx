@@ -18,14 +18,23 @@ export function Typography({
   
   const getVariantClass = () => {
     switch (variant) {
-      case 'h1': return 'text-3xl tracking-tight';
-      case 'h2': return 'text-2xl tracking-tight';
-      case 'h3': return 'text-xl';
+      case 'h1': return 'text-3xl tracking-tightest';
+      case 'h2': return 'text-2xl tracking-tighter';
+      case 'h3': return 'text-xl tracking-tight';
       case 'body': return 'text-base';
-      case 'caption': return 'text-sm opacity-60';
-      case 'label': return 'text-xs uppercase tracking-widest opacity-50';
-      case 'balance': return 'text-4xl tracking-tighter';
+      case 'caption': return 'text-sm';
+      case 'label': return 'text-[10px] uppercase tracking-widest';
+      case 'balance': return 'text-4xl tracking-tightest';
       default: return 'text-base';
+    }
+  };
+
+  const getTextColorClass = () => {
+    switch (variant) {
+      case 'caption': return 'text-ink-secondary';
+      case 'label': return 'text-ink-tertiary';
+      case 'body': return 'text-ink-primary';
+      default: return 'text-ink-primary';
     }
   };
 
@@ -38,9 +47,11 @@ export function Typography({
     }
   };
 
+  const hasColorOverride = className.includes('text-');
+
   return (
     <Text
-      className={`text-white ${getVariantClass()} ${getWeightClass()} ${className}`}
+      className={`${hasColorOverride ? '' : getTextColorClass()} ${getVariantClass()} ${getWeightClass()} ${className}`}
       style={style}
       {...props}
     >

@@ -41,10 +41,10 @@ export function FAB({
 
 const styles = StyleSheet.create({
   elevation: {
-    elevation: 8,
-    shadowColor: '#a3e635',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 15,
   },
 });

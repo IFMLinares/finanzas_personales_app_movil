@@ -35,15 +35,16 @@ export function Input({
         </Typography>
       )}
       <View
-        className={`bg-transparent border-b h-14 px-1 flex-row items-center ${
-          error ? 'border-error-500' : isFocused ? 'border-brand-500' : 'border-gray-800'
+        className={`bg-white/5 border rounded-2xl h-14 px-4 flex-row items-center ${
+          error ? 'border-error-500/50' : isFocused ? 'border-brand-500' : 'border-white/5'
         }`}
       >
         <TextInput
-          className="flex-1 text-white text-lg h-full"
+          className="flex-1 text-white text-base h-full"
           placeholderTextColor="#4b5563"
           secureTextEntry={isPassword && !isPasswordVisible}
           autoCapitalize={effectiveAutoCapitalize}
+          selectionColor="#465fff"
           onFocus={(e) => {
             setIsFocused(true);
             onFocus?.(e);
@@ -62,8 +63,8 @@ export function Input({
           >
             <Ionicons 
               name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'} 
-              size={22} 
-              color={isPasswordVisible ? '#3C50E0' : '#8A99AF'} 
+              size={20} 
+              color={isFocused ? '#465fff' : '#4b5563'} 
             />
           </TouchableOpacity>
         )}

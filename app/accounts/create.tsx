@@ -7,13 +7,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Typography } from '@/components/ui/Typography';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { GlassCard } from '@/components/ui/GlassCard';
 import { SelectModal } from '@/components/ui/SelectModal';
 import { financeService } from '@/services/financeService';
 
 export default function CreateAccountScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  
+
   const [name, setName] = useState('');
   const [initialBalance, setInitialBalance] = useState('0');
   const [selectedCurrency, setSelectedCurrency] = useState<any>(null);
@@ -62,64 +63,76 @@ export default function CreateAccountScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-950">
-      <View className="flex-row items-center px-5 py-4 border-b border-gray-900">
-        <TouchableOpacity onPress={() => router.back()} className="mr-4">
-          <Ionicons name="arrow-back" size={24} color="white" />
+      <View className="flex-row items-center px-6 py-4 border-b border-white/5 bg-gray-950/80">
+        <TouchableOpacity onPress={() => router.back()} className="mr-4 w-10 h-10 rounded-xl bg-white/5 justify-center items-center">
+          <Ionicons name="chevron-back" size={20} color="white" />
         </TouchableOpacity>
-        <Typography variant="h3" weight="bold">Nueva Cuenta</Typography>
+        <Typography variant="h3" weight="bold">Vincular Activo</Typography>
       </View>
 
-      <ScrollView className="flex-1 px-5 pt-6">
-        <View className="mb-6">
-          <Typography variant="label" className="text-gray-400 mb-2">Nombre de la cuenta</Typography>
-          <Input 
-            placeholder="Ej: Banesco, Efectivo USD..." 
-            value={name} 
-            onChangeText={setName}
-            className="bg-gray-900 border-gray-800 text-white"
+      <ScrollView className="flex-1 px-6 pt-10" showsVerticalScrollIndicator={false}>
+        <View className="mb-10">
+          <Typography variant="h1" weight="bold" className="text-white mb-2">Nueva Bóveda</Typography>
+          <Typography variant="body" className="text-ink-secondary">Define el origen y la moneda de tu fondo.</Typography>
+        </View>
+
+        <GlassCard intensity="medium" className="p-8 mb-10">
+          <View className="mb-8">
+            <Input
+              label="Nombre de Referencia"
+              placeholder="Ej: Banesco, Efectivo USD..."
+              value={name}
+              onChangeText={setName}
+            />
+          </View>
+
+          <View className="mb-8">
+            <Typography variant="label" className="text-ink-tertiary mb-3 ml-1">Moneda del Activo</Typography>
+            <TouchableOpacity
+              onPress={() => setShowCurrencyModal(true)}
+              className="flex-row items-center justify-between bg-white/5 border border-white/5 p-4 h-14 rounded-2xl"
+            >
+              <View className="flex-row items-center">
+                {selectedCurrency ? (
+                  <>
+                    <View className="w-8 h-8 rounded-lg bg-brand-500/10 justify-center items-center mr-3">
+                      <Ionicons name={selectedCurrency.icon} size={16} color="#465fff" />
+                    </View>
+                    <Typography weight="semibold">{selectedCurrency.label} ({selectedCurrency.code})</Typography>
+                  </>
+                ) : (
+                  <Typography className="text-ink-muted">Seleccionar divisa...</Typography>
+                )}
+              </View>
+              <Ionicons name="chevron-down" size={16} color="#4b5563" />
+            </TouchableOpacity>
+          </View>
+
+          <View className="mb-10">
+            <Input
+              label="Saldo de Apertura"
+              placeholder="0.00"
+              value={initialBalance}
+              onChangeText={setInitialBalance}
+              keyboardType="numeric"
+            />
+          </View>
+
+          <Button
+            title="Guardar cuenta"
+            onPress={handleCreate}
+            loading={mutation.isPending}
           />
-        </View>
+        </GlassCard>
 
-        <View className="mb-6">
-          <Typography variant="label" className="text-gray-400 mb-2">Moneda</Typography>
-          <TouchableOpacity 
-            onPress={() => setShowCurrencyModal(true)}
-            className="flex-row items-center justify-between bg-gray-900 border border-gray-800 p-4 rounded-xl"
-          >
-            <View className="flex-row items-center">
-              {selectedCurrency ? (
-                <>
-                  <Ionicons name={selectedCurrency.icon} size={20} color="#465fff" className="mr-3" />
-                  <Typography>{selectedCurrency.label} ({selectedCurrency.code})</Typography>
-                </>
-              ) : (
-                <Typography className="text-gray-500">Seleccionar moneda</Typography>
-              )}
-            </View>
-            <Ionicons name="chevron-down" size={20} color="#4b5563" />
-          </TouchableOpacity>
+        <View className="items-center mb-10">
+          <Typography variant="caption" className="text-ink-muted text-center px-10">
+            Esta cuenta será sincronizada con tu balance global inmediatamente.
+          </Typography>
         </View>
-
-        <View className="mb-8">
-          <Typography variant="label" className="text-gray-400 mb-2">Saldo Inicial (Opcional)</Typography>
-          <Input 
-            placeholder="0.00" 
-            value={initialBalance} 
-            onChangeText={setInitialBalance}
-            keyboardType="numeric"
-            className="bg-gray-900 border-gray-800 text-white"
-          />
-        </View>
-
-        <Button 
-          label="Crear Cuenta" 
-          onPress={handleCreate} 
-          loading={mutation.isPending}
-          className="bg-brand-500 h-14 rounded-2xl"
-        />
       </ScrollView>
 
-      <SelectModal 
+      <SelectModal
         isVisible={showCurrencyModal}
         onClose={() => setShowCurrencyModal(false)}
         title="Selecciona Moneda"
