@@ -11,6 +11,8 @@ export const ENDPOINTS = {
   },
   FINANCE: {
     DASHBOARD_SUMMARY: '/finance/dashboard/summary/',
+    ACCOUNTS: '/finance/accounts/',
+    CATEGORIES: '/finance/categories/',
   },
   TRANSACTIONS: {
     BASE: '/transactions/',

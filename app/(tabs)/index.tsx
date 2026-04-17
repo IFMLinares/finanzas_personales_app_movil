@@ -9,41 +9,55 @@ import { FAB } from '@/components/ui/FAB';
 
 type CurrencyType = 'USD' | 'EUR' | 'USDT';
 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
+
 export default function DashboardScreen() {
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const queryClient = useQueryClient();
+  const router = useRouter();
   const [showFabMenu, setShowFabMenu] = useState(false);
   const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
-  const [dashboardData, setDashboardData] = useState<DashboardResponse | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showBalance, setShowBalance] = useState(true);
   const [selectedCurrency, setSelectedCurrency] = useState<CurrencyType>('USD');
   const { signOut } = useAuth();
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Queries con TanStack Query
+  const { 
+    data: dashboardData, 
+    isLoading: loadingSummary, 
+    refetch: refetchSummary 
+  } = useQuery({
+    queryKey: ['dashboardSummary'],
+    queryFn: () => financeService.getDashboardSummary(),
+  });
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [dashData, transactionsData] = await Promise.all([
-        financeService.getDashboardSummary(),
-        financeService.getRecentTransactions(),
-      ]);
-      setDashboardData(dashData);
-      setTransactions(transactionsData);
-    } catch (error) {
-      console.error('Error loading dashboard data:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  const { 
+    data: transactions = [], 
+    isLoading: loadingTransactions, 
+    refetch: refetchTransactions 
+  } = useQuery({
+    queryKey: ['recentTransactions'],
+    queryFn: () => financeService.getRecentTransactions(),
+  });
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadData();
+  const { 
+    data: accounts = [], 
+    isLoading: loadingAccounts, 
+    refetch: refetchAccounts 
+  } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: () => financeService.getAccounts(),
+  });
+
+  const loading = loadingSummary || loadingTransactions || loadingAccounts;
+  const refreshing = false; // Manejado por refetch
+
+  const onRefresh = async () => {
+    await Promise.all([
+      refetchSummary(),
+      refetchTransactions(),
+      refetchAccounts(),
+    ]);
   };
 
   const formatCurrency = (amount: number) => {
@@ -187,7 +201,10 @@ export default function DashboardScreen() {
               <Typography variant="h3" weight="bold">Cuentas</Typography>
               <Typography variant="caption" className="text-gray-500">Distribución de saldos</Typography>
             </View>
-            <TouchableOpacity className="bg-brand-500/10 px-4 py-2 rounded-2xl">
+            <TouchableOpacity 
+              onPress={() => router.push('/accounts/create')}
+              className="bg-brand-500/10 px-4 py-2 rounded-2xl"
+            >
               <Typography className="text-brand-500" variant="caption" weight="bold">Gestionar</Typography>
             </TouchableOpacity>
           </View>
@@ -198,49 +215,47 @@ export default function DashboardScreen() {
             className="flex-row"
             contentContainerStyle={{ gap: 12 }}
           >
-            {/* Account Card: Bolívares */}
-            <View className="w-56 bg-gray-800 rounded-3xl p-5 border border-gray-700">
-              <View className="flex-row items-center justify-between mb-4">
-                <View className="w-10 h-10 rounded-full bg-gray-900 justify-center items-center mr-3 border border-gray-700">
-                  <Typography className="text-xl">🇻🇪</Typography>
-                </View>
-                <View className="bg-success-500/20 px-2 py-1 rounded-lg">
-                  <Typography variant="label" className="text-success-500 text-[8px]" weight="bold">Activa</Typography>
-                </View>
-              </View>
-              
-              <View className="mb-4">
-                <Typography variant="caption" className="text-gray-500 mb-1">Bolívares</Typography>
-                <Typography variant="h3" weight="bold">Bs 95.002,00</Typography>
-              </View>
+            {accounts.length > 0 ? (
+              accounts.map((acc) => (
+                <View key={acc.id} className="w-56 bg-gray-800 rounded-3xl p-5 border border-gray-700">
+                  <View className="flex-row items-center justify-between mb-4">
+                    <View className="w-10 h-10 rounded-full bg-gray-900 justify-center items-center mr-3 border border-gray-700">
+                      {acc.currency_detail?.code === 'USDT' ? (
+                        <Typography variant="label" weight="bold" className="text-brand-500 text-[10px]">USDT</Typography>
+                      ) : (
+                        <Typography className="text-xl">
+                          {acc.currency_detail?.code === 'VES' ? '🇻🇪' : 
+                           acc.currency_detail?.code === 'EUR' ? '🇪🇺' : '🇺🇸'}
+                        </Typography>
+                      )}
+                    </View>
+                    <View className="bg-success-500/20 px-2 py-1 rounded-lg">
+                      <Typography variant="label" className="text-success-500 text-[8px]" weight="bold">Activa</Typography>
+                    </View>
+                  </View>
+                  
+                  <View className="mb-4">
+                    <Typography variant="caption" className="text-gray-500 mb-1">{acc.name}</Typography>
+                    <Typography variant="h3" weight="bold" numberOfLines={1}>
+                      {acc.currency_detail?.symbol} {formatCurrency(typeof acc.balance === 'string' ? parseFloat(acc.balance) : acc.balance)}
+                    </Typography>
+                  </View>
 
-              <TouchableOpacity className="flex-row items-center">
-                <Typography variant="caption" className="text-brand-500 mr-1" weight="semibold">Ver detalles</Typography>
-                <Ionicons name="chevron-forward" size={14} color="#465fff" />
+                  <TouchableOpacity className="flex-row items-center">
+                    <Typography variant="caption" className="text-brand-500 mr-1" weight="semibold">Ver detalles</Typography>
+                    <Ionicons name="chevron-forward" size={14} color="#465fff" />
+                  </TouchableOpacity>
+                </View>
+              ))
+            ) : (
+              <TouchableOpacity 
+                onPress={() => router.push('/accounts/create')}
+                className="w-56 bg-gray-800/50 rounded-3xl p-5 border border-dashed border-gray-700 justify-center items-center"
+              >
+                <Ionicons name="add-circle-outline" size={32} color="#465fff" className="mb-2" />
+                <Typography variant="caption" className="text-gray-400">Agregar Cuenta</Typography>
               </TouchableOpacity>
-            </View>
-
-            {/* Account Card: Dólares */}
-            <View className="w-56 bg-gray-800 rounded-3xl p-5 border border-gray-700">
-              <View className="flex-row items-center justify-between mb-4">
-                <View className="w-10 h-10 rounded-full bg-gray-900 justify-center items-center mr-3 border border-gray-700">
-                  <Typography className="text-xl">🇺🇸</Typography>
-                </View>
-                <View className="bg-gray-700/50 px-2 py-1 rounded-lg">
-                  <Typography variant="label" className="text-gray-400 text-[8px]" weight="bold">Principal</Typography>
-                </View>
-              </View>
-              
-              <View className="mb-4">
-                <Typography variant="caption" className="text-gray-500 mb-1">Dólares Cash</Typography>
-                <Typography variant="h3" weight="bold">$ 0.00</Typography>
-              </View>
-
-              <TouchableOpacity className="flex-row items-center">
-                <Typography variant="caption" className="text-brand-500 mr-1" weight="semibold">Ver detalles</Typography>
-                <Ionicons name="chevron-forward" size={14} color="#465fff" />
-              </TouchableOpacity>
-            </View>
+            )}
           </ScrollView>
         </View>
 
@@ -263,17 +278,19 @@ export default function DashboardScreen() {
                   <View className="w-12 h-12 bg-gray-900 rounded-2xl justify-center items-center">
                     <Ionicons name={(tx.display_icon || 'cash-outline') as any} size={22} color={tx.display_type === 'income' ? '#12b76a' : '#f04438'} />
                   </View>
-                  <View className="flex-1">
+                  <View className="flex-1 mr-3">
                     <Typography weight="semibold" numberOfLines={1}>{tx.display_title || 'Sin descripción'}</Typography>
                     <Typography variant="caption" className="text-gray-500">{tx.date ? new Date(tx.date).toLocaleDateString() : '--'}</Typography>
                   </View>
                 </View>
-                <Typography 
-                  weight="bold" 
-                  className={tx.display_type === 'income' ? 'text-success-500' : 'text-white'}
-                >
-                  {tx.display_type === 'income' ? '+' : '-'}${parseFloat(tx.amount?.toString() || "0").toFixed(2)}
-                </Typography>
+                <View className="items-end flex-shrink-0">
+                  <Typography 
+                    weight="bold" 
+                    className={tx.display_type === 'income' ? 'text-success-500' : 'text-white'}
+                  >
+                    {tx.display_type === 'income' ? '+' : '-'}${parseFloat(tx.amount?.toString() || "0").toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </Typography>
+                </View>
               </TouchableOpacity>
             ))
           ) : (
@@ -291,7 +308,7 @@ export default function DashboardScreen() {
       {showFabMenu && (
         <View className="absolute bottom-24 right-8 w-48 bg-gray-900 rounded-3xl border border-gray-700 shadow-2xl overflow-hidden z-50">
           <TouchableOpacity 
-            onPress={() => { console.log('Nuevo movimiento'); setShowFabMenu(false); }}
+            onPress={() => { router.push('/transaction/new'); setShowFabMenu(false); }}
             className="flex-row items-center p-4 border-b border-gray-800"
           >
             <View className="w-8 h-8 bg-success-500/10 rounded-lg justify-center items-center mr-3">
@@ -300,7 +317,7 @@ export default function DashboardScreen() {
             <Typography weight="semibold" className="text-gray-200">Movimiento</Typography>
           </TouchableOpacity>
           <TouchableOpacity 
-            onPress={() => { console.log('Nueva transferencia'); setShowFabMenu(false); }}
+            onPress={() => { router.push('/transaction/new?type=TR'); setShowFabMenu(false); }}
             className="flex-row items-center p-4"
           >
             <View className="w-8 h-8 bg-brand-500/10 rounded-lg justify-center items-center mr-3">

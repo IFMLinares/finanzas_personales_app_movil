@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TextInputProps, TouchableOpacity } from 'react-native';
+import { View, TextInput, TextInputProps, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Typography } from './Typography';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -27,20 +28,20 @@ export function Input({
   const effectiveAutoCapitalize = isPassword ? 'none' : autoCapitalize;
 
   return (
-    <View className="mb-4">
+    <View className="mb-6">
       {label && (
-        <Text className="text-[#AEB7C0] font-[Outfit_600SemiBold] mb-2 text-sm">
+        <Typography variant="label" className="text-gray-500 mb-2 ml-1">
           {label}
-        </Text>
+        </Typography>
       )}
       <View
-        className={`bg-[#24303F] border rounded-xl h-14 px-4 flex-row items-center ${
-          error ? 'border-red-500' : isFocused ? 'border-[#3C50E0]' : 'border-[#2E3A47]'
+        className={`bg-transparent border-b h-14 px-1 flex-row items-center ${
+          error ? 'border-error-500' : isFocused ? 'border-brand-500' : 'border-gray-800'
         }`}
       >
         <TextInput
-          className="flex-1 text-white font-[Outfit_400Regular] text-base h-full"
-          placeholderTextColor="#8A99AF"
+          className="flex-1 text-white text-lg h-full"
+          placeholderTextColor="#4b5563"
           secureTextEntry={isPassword && !isPasswordVisible}
           autoCapitalize={effectiveAutoCapitalize}
           onFocus={(e) => {
@@ -68,9 +69,9 @@ export function Input({
         )}
       </View>
       {error && (
-        <Text className="text-red-500 text-xs mt-1 font-[Outfit_400Regular]">
+        <Typography variant="caption" className="text-error-500 mt-1 ml-1">
           {error}
-        </Text>
+        </Typography>
       )}
     </View>
   );
