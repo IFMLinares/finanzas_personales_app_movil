@@ -29,7 +29,7 @@ export default function LoginScreen() {
       await signIn(email, password);
     } catch (error: any) {
       const parsed = parseApiError(error);
-      
+
       // Si hay errores por campo, los seteamos en el estado
       if (Object.keys(parsed.errors).length > 0) {
         setErrors(parsed.errors);
@@ -58,10 +58,10 @@ export default function LoginScreen() {
             </Typography>
           </View>
 
-          <GlassCard intensity="medium" className="p-8">
+          <GlassCard intensity="high" className="p-8">
             <View className="mb-6">
               <Input
-                label="Identidad Digital (Email)"
+                label="Email"
                 placeholder="ejemplo@correo.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -77,7 +77,7 @@ export default function LoginScreen() {
                 onChangeText={setPassword}
                 error={errors.password}
               />
-              
+
               <TouchableOpacity className="self-end mb-8">
                 <Typography variant="label" weight="bold" className="text-vault-usd">
                   ¿Olvidaste tu contraseña?

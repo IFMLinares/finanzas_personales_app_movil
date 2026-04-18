@@ -17,7 +17,7 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
+
   const { signUp } = useAuth();
   const router = useRouter();
 
@@ -53,7 +53,7 @@ export default function RegisterScreen() {
       // La redirección se maneja automáticamente en el AuthContext al detectar el cambio de estado de 'user'
     } catch (error: any) {
       const parsed = parseApiError(error);
-      
+
       // Si hay errores por campo, los seteamos en el estado
       if (Object.keys(parsed.errors).length > 0) {
         setErrors(parsed.errors);
@@ -82,7 +82,7 @@ export default function RegisterScreen() {
             </Typography>
           </View>
 
-          <GlassCard intensity="medium" className="p-8">
+          <GlassCard intensity="high" className="p-8">
             <View className="mb-6">
               <View className="flex-row space-x-4 mb-2">
                 <View className="flex-1">
@@ -106,7 +106,7 @@ export default function RegisterScreen() {
               </View>
 
               <Input
-                label="Bóveda Digital (Email)"
+                label="Email"
                 placeholder="ejemplo@correo.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -114,7 +114,7 @@ export default function RegisterScreen() {
                 onChangeText={setEmail}
                 error={errors.email}
               />
-              
+
               <Input
                 label="Clave de Acceso"
                 placeholder="Mín. 8 caracteres"
@@ -123,7 +123,7 @@ export default function RegisterScreen() {
                 onChangeText={setPassword}
                 error={errors.password}
               />
-              
+
               <Input
                 label="Confirmar Clave"
                 placeholder="••••••••"
@@ -132,7 +132,7 @@ export default function RegisterScreen() {
                 onChangeText={setConfirmPassword}
                 error={errors.password_confirm}
               />
-              
+
               <View className="mt-2 mb-8 px-1">
                 <Typography variant="caption" className="text-ink-muted leading-5">
                   Al registrarte, declaras conocer los términos de seguridad del sistema.
@@ -140,7 +140,7 @@ export default function RegisterScreen() {
               </View>
 
               <Button
-                title="Generar Bóveda"
+                title="Registrarse"
                 onPress={handleRegister}
                 loading={isLoading}
               />

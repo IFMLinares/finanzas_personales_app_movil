@@ -36,7 +36,7 @@ export function Input({
       )}
       <View
         className={`bg-white/5 border rounded-2xl h-14 px-4 flex-row items-center ${
-          error ? 'border-error-500/50' : isFocused ? 'border-brand-500' : 'border-white/5'
+          error ? 'border-error-500/50' : isFocused ? 'border-brand-500' : 'border-white/10'
         }`}
       >
         <TextInput

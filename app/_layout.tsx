@@ -43,12 +43,24 @@ export default function RootLayout() {
     return null;
   }
 
+  const CustomDarkTheme = {
+    ...DarkTheme,
+    colors: {
+      ...DarkTheme.colors,
+      background: '#07090e',
+      card: '#07090e',
+    },
+  };
+
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <ThemeProvider value={DarkTheme}>
-            <Stack screenOptions={{ headerShown: false }}>
+          <ThemeProvider value={CustomDarkTheme}>
+            <Stack screenOptions={{ 
+              headerShown: false,
+              contentStyle: { backgroundColor: '#07090e' }
+            }}>
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="modal" options={{ presentation: 'modal' }} />

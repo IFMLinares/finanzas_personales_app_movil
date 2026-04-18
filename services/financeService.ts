@@ -9,8 +9,11 @@ export interface Transaction {
   amount: string | number;
   date: string;
   notes?: string;
+  destination_account?: number | string | null;
+  destination_amount?: string | number | null;
+  exchange_rate?: string | number | null;
   display_title?: string;
-  display_type?: 'income' | 'expense';
+  display_type?: 'income' | 'expense' | 'transfer';
   display_icon?: string;
 }
 
@@ -46,6 +49,10 @@ export interface Account {
     symbol: string;
   };
   balance: string | number;
+  display_order?: number;
+  icon_url?: string;
+  icon_image?: string;
+  display_icon?: string;
 }
 
 export interface Category {
@@ -56,6 +63,46 @@ export interface Category {
 }
 
 class FinanceService {
+  /**
+   * Reordena las cuentas del usuario.
+   */
+  async reorderAccounts(ids: (number | string)[]): Promise<boolean> {
+    try {
+      await apiClient.patch(`${ENDPOINTS.FINANCE.ACCOUNTS}reorder/`, { ids });
+      return true;
+    } catch (error) {
+      console.error('Error reordering accounts:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Obtiene los detalles de una cuenta.
+   */
+  async getAccount(id: number | string): Promise<Account | null> {
+    try {
+      const response = await apiClient.get<Account>(`${ENDPOINTS.FINANCE.ACCOUNTS}${id}/`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching account detail:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Actualiza una cuenta.
+   */
+  async updateAccount(id: number | string, data: any): Promise<Account | null> {
+    try {
+      const response = await apiClient.patch<Account>(`${ENDPOINTS.FINANCE.ACCOUNTS}${id}/`, data, {
+        headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating account:', error);
+      throw error;
+    }
+  }
   /**
    * Obtiene el resumen multimoneda del Dashboard.
    * Nueva ruta modularizada: /finance/dashboard/summary/
@@ -85,7 +132,7 @@ class FinanceService {
       return data.map(tx => ({
         ...tx,
         display_title: tx.notes || (tx.type === 'IN' ? 'Ingreso' : tx.type === 'EX' ? 'Gasto' : 'Transferencia'),
-        display_type: (tx.type === 'IN' ? 'income' : 'expense') as 'income' | 'expense',
+        display_type: (tx.type === 'IN' ? 'income' : tx.type === 'EX' ? 'expense' : 'transfer') as 'income' | 'expense' | 'transfer',
         display_icon: tx.type === 'IN' ? 'cash-outline' : tx.type === 'EX' ? 'cart-outline' : 'swap-horizontal-outline',
       })).slice(0, 10);
     } catch (error) {
@@ -100,7 +147,9 @@ class FinanceService {
   async getAccounts(): Promise<Account[]> {
     try {
       const response = await apiClient.get<Account[]>(ENDPOINTS.FINANCE.ACCOUNTS);
-      return Array.isArray(response.data) ? response.data : [];
+      const data = Array.isArray(response.data) ? response.data : [];
+      // Ordenar por display_order. Si no tiene, se manda al final (999).
+      return data.sort((a, b) => (a.display_order ?? 999) - (b.display_order ?? 999));
     } catch (error) {
       console.error('Error fetching accounts:', error);
       return [];

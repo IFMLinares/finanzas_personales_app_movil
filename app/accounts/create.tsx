@@ -72,7 +72,7 @@ export default function CreateAccountScreen() {
 
       <ScrollView className="flex-1 px-6 pt-10" showsVerticalScrollIndicator={false}>
         <View className="mb-10">
-          <Typography variant="h1" weight="bold" className="text-white mb-2">Nueva Bóveda</Typography>
+          <Typography variant="h1" weight="bold" className="text-white mb-2">Nueva Cuenta</Typography>
           <Typography variant="body" className="text-ink-secondary">Define el origen y la moneda de tu fondo.</Typography>
         </View>
 
