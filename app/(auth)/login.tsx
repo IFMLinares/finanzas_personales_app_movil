@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Typography } from '../../components/ui/Typography';
@@ -16,10 +17,11 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { signIn } = useAuth();
+  const { showToast } = useToast();
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Por favor ingresa todos los campos.');
+      showToast({ message: 'Por favor ingresa todos los campos.', type: 'error' });
       return;
     }
 
@@ -35,8 +37,8 @@ export default function LoginScreen() {
       if (Object.keys(parsed.errors).length > 0) {
         setErrors(parsed.errors);
       } else {
-        // Si es un error general (ej: credenciales o servidor), usamos Alert
-        Alert.alert('Error de acceso', parsed.message);
+        // Si es un error general (ej: credenciales o servidor), usamos Toast
+        showToast({ message: parsed.message || 'Error de acceso', type: 'error' });
       }
     } finally {
       setIsLoading(false);

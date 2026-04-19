@@ -1,3 +1,4 @@
+import { DeviceEventEmitter } from 'react-native';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
@@ -69,6 +70,22 @@ apiClient.interceptors.response.use(
       }
     }
 
+    return Promise.reject(error);
+  }
+);
+
+// Interceptor global para errores de red (Conexión)
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Si no hay respuesta del servidor (error.request existe pero error.response no)
+    // o el mensaje es explícitamente "Network Error"
+    if (!error.response || error.message === 'Network Error') {
+      // Usamos DeviceEventEmitter de React Native para emitir eventos globales
+      DeviceEventEmitter.emit('global-connection-error', {
+        message: 'No se pudo conectar con el servidor. Verifica tu internet.'
+      });
+    }
     return Promise.reject(error);
   }
 );

@@ -8,6 +8,7 @@ export const ENDPOINTS = {
     REGISTER: '/auth/register/',
     LOGOUT: '/auth/logout/',
     REFRESH: '/auth/refresh/',
+    ME: '/auth/me/',
   },
   FINANCE: {
     DASHBOARD_SUMMARY: '/finance/dashboard/summary/',

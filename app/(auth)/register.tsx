@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Typography } from '../../components/ui/Typography';
@@ -21,22 +22,23 @@ export default function RegisterScreen() {
 
   const { signUp } = useAuth();
   const router = useRouter();
+  const { showToast } = useToast();
 
   const handleRegister = async () => {
     // 1. Validaciones de campos obligatorios
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
-      Alert.alert('Campos requeridos', 'Por favor completa todos los campos para continuar.');
+      showToast({ message: 'Por favor completa todos los campos.', type: 'error' });
       return;
     }
 
     // 2. Esquema mínimo de seguridad (Solicitado: Validar longitud y contraseñas iguales)
     if (password.length < 8) {
-      Alert.alert('Seguridad', 'La contraseña debe tener al menos 8 caracteres por seguridad.');
+      showToast({ message: 'La contraseña debe tener al menos 8 caracteres.', type: 'error' });
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Las contraseñas no coinciden. Por favor verifícalas.');
+      showToast({ message: 'Las contraseñas no coinciden. Por favor verifícalas.', type: 'error' });
       return;
     }
 
@@ -59,8 +61,8 @@ export default function RegisterScreen() {
       if (Object.keys(parsed.errors).length > 0) {
         setErrors(parsed.errors);
       } else {
-        // Si es un error general, usamos Alert
-        Alert.alert('Error de registro', parsed.message);
+        // Si es un error general, usamos Toast
+        showToast({ message: parsed.message || 'Error de registro', type: 'error' });
       }
     } finally {
       setIsLoading(false);

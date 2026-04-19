@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import { DeviceEventEmitter } from 'react-native';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -20,7 +21,7 @@ const ToastContext = createContext<ToastContextProps | undefined>(undefined);
 export const ToastProvider = ({ children }: { children: ReactNode }) => {
   const [toast, setToast] = useState<ToastOptions | null>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const [timeoutId, setTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = useCallback((options: ToastOptions | string) => {
     if (timeoutId) {
@@ -39,6 +40,19 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
     
     setTimeoutId(id);
   }, [timeoutId]);
+
+  // Escuchar errores globales de conexión (desde el apiClient)
+  useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener('global-connection-error', (data) => {
+      showToast({
+        message: data.message || 'Error de conexión',
+        type: 'error',
+        duration: 5000,
+      });
+    });
+
+    return () => subscription.remove();
+  }, [showToast]);
 
   const hideToast = useCallback(() => {
     setIsVisible(false);

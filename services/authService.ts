@@ -82,6 +82,19 @@ const authService = {
   },
 
   /**
+   * Obtiene los datos del usuario actual desde el servidor.
+   * Sirve también como verificación de validez del token y conectividad.
+   */
+  getMe: async (): Promise<any> => {
+    try {
+      const response = await apiClient.get(ENDPOINTS.AUTH.ME);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
    * Verifica si hay una sesión activa en el almacenamiento local.
    */
   hasStoredSession: async (): Promise<boolean> => {
