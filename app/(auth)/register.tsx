@@ -7,6 +7,7 @@ import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Typography } from '../../components/ui/Typography';
 import { GlassCard } from '../../components/ui/GlassCard';
+import { BackgroundAura } from '../../components/ui/BackgroundAura';
 import { parseApiError } from '../../utils/errorUtils';
 
 export default function RegisterScreen() {
@@ -68,16 +69,23 @@ export default function RegisterScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-950">
+      <BackgroundAura top="-10%" right="-20%" color="#14b8a6" size={400} opacity={0.15} />
+      <BackgroundAura bottom="10%" left="-10%" color="#465fff" size={300} opacity={0.1} />
+      
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-8 py-10">
+        <ScrollView 
+          contentContainerStyle={{ flexGrow: 1 }} 
+          className="px-8 py-10"
+          keyboardShouldPersistTaps="handled"
+        >
           <View className="mb-12 mt-6">
             <Typography variant="h1" weight="bold" className="text-white mb-2">
               Unirse
             </Typography>
-            <Typography variant="body" className="text-ink-secondary">
+            <Typography variant="body" className="text-white/80">
               Crea tu perfil en el ecosistema financiero.
             </Typography>
           </View>
@@ -134,7 +142,7 @@ export default function RegisterScreen() {
               />
 
               <View className="mt-2 mb-8 px-1">
-                <Typography variant="caption" className="text-ink-muted leading-5">
+                <Typography variant="caption" className="text-white/60 leading-5">
                   Al registrarte, declaras conocer los términos de seguridad del sistema.
                 </Typography>
               </View>
@@ -147,7 +155,7 @@ export default function RegisterScreen() {
             </View>
 
             <View className="flex-row justify-center items-center">
-              <Typography variant="caption" className="text-ink-muted mr-2">
+              <Typography variant="caption" className="text-white/50 mr-2">
                 ¿Ya tienes acceso?
               </Typography>
               <Link href="/(auth)/login" asChild>

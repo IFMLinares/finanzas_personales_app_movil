@@ -1,6 +1,4 @@
-import React from 'react';
-import { View, ViewProps, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, ViewProps } from 'react-native';
 
 interface GlassCardProps extends ViewProps {
   className?: string;
@@ -8,14 +6,14 @@ interface GlassCardProps extends ViewProps {
   children: React.ReactNode;
 }
 
-export function GlassCard({ 
-  children, 
-  className = '', 
+export function GlassCard({
+  children,
+  className = '',
   intensity = 'medium',
   style,
-  ...props 
+  ...props
 }: GlassCardProps) {
-  
+
   const getIntensityStyles = () => {
     switch (intensity) {
       case 'low': return { bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.05)' };
@@ -28,10 +26,10 @@ export function GlassCard({
   const { bg, border } = getIntensityStyles();
 
   return (
-    <View 
+    <View
       className={`rounded-3xl overflow-hidden ${className}`}
       style={[
-        { 
+        {
           backgroundColor: bg,
           borderWidth: 1,
           borderColor: border,

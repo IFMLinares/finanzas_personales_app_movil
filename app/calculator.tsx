@@ -57,6 +57,10 @@ export default function CalculatorScreen() {
     else setAmount(prev => prev.slice(0, -1));
   };
 
+  const handleNumpadClear = () => {
+    setAmount('0');
+  };
+
   const copyToClipboard = () => {
     Clipboard.setString(result.toFixed(2));
     Alert.alert('Copiado', 'El resultado se ha copiado al portapapeles.');
@@ -69,7 +73,7 @@ export default function CalculatorScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="white" />
         </TouchableOpacity>
-        <Typography variant="h3" weight="bold" className="text-white">Calculadora Puente</Typography>
+        <Typography variant="h3" weight="bold" className="text-white">Calculadora</Typography>
         <TouchableOpacity onPress={() => setAmount('0')}>
           <Typography variant="label" weight="bold" className="text-blue-500">LIMPIAR</Typography>
         </TouchableOpacity>
@@ -80,22 +84,22 @@ export default function CalculatorScreen() {
         <View className="flex-row items-center justify-between mb-8">
           {/* Source Pod */}
           <View className="flex-1 bg-white/5 border border-white/10 p-4 rounded-3xl h-32 justify-center items-center">
-             <Typography variant="caption" className="text-gray-500 font-bold uppercase text-[9px] mb-1">MONEDA ORIGEN</Typography>
-             <TouchableOpacity 
-               onPress={() => !isFromVes && setShowCurrencyModal(true)}
-               className="flex-row items-center"
-               disabled={isFromVes}
-             >
-                <Typography variant="h2" weight="bold" className="text-blue-400">
-                  {isFromVes ? 'Bs' : otherCurrency === 'USD' ? '$' : otherCurrency}
-                </Typography>
-                {!isFromVes && <Ionicons name="caret-down" size={12} color="#60a5fa" className="ml-1" />}
-             </TouchableOpacity>
-             <Typography variant="h2" weight="bold" className="text-white mt-1" numberOfLines={1}>{amount}</Typography>
+            <Typography variant="caption" className="text-gray-500 font-bold uppercase text-[9px] mb-1">MONEDA ORIGEN</Typography>
+            <TouchableOpacity
+              onPress={() => !isFromVes && setShowCurrencyModal(true)}
+              className="flex-row items-center"
+              disabled={isFromVes}
+            >
+              <Typography variant="h2" weight="bold" className="text-blue-400">
+                {isFromVes ? 'Bs' : otherCurrency === 'USD' ? '$' : otherCurrency}
+              </Typography>
+              {!isFromVes && <Ionicons name="caret-down" size={12} color="#60a5fa" className="ml-1" />}
+            </TouchableOpacity>
+            <Typography variant="h2" weight="bold" className="text-white mt-1" numberOfLines={1}>{amount}</Typography>
           </View>
 
           {/* Swap Center */}
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => setIsFromVes(!isFromVes)}
             className="w-10 h-10 bg-blue-500 rounded-full items-center justify-center -mx-3 z-10 border-4 border-gray-950"
           >
@@ -103,72 +107,78 @@ export default function CalculatorScreen() {
           </TouchableOpacity>
 
           {/* Destination Pod */}
-          <TouchableOpacity 
+          <TouchableOpacity
             onLongPress={copyToClipboard}
             onPress={() => isFromVes && setShowCurrencyModal(true)}
             className="flex-1 bg-blue-500/10 border border-blue-500/20 p-4 rounded-3xl h-32 justify-center items-center"
           >
-             <Typography variant="caption" className="text-blue-500 font-bold uppercase text-[9px] mb-1">REALIZARÁ (RESULTADO)</Typography>
-             <View className="flex-row items-center">
-                <Typography variant="h2" weight="bold" className="text-white">
-                  {!isFromVes ? 'Bs' : otherCurrency === 'USD' ? '$' : otherCurrency}
-                </Typography>
-                {isFromVes && <Ionicons name="caret-down" size={12} color="#3b82f6" className="ml-1" />}
-             </View>
-             <Typography variant="h2" weight="bold" className="text-white mt-1" numberOfLines={1}>{result.toFixed(2)}</Typography>
-             <Typography variant="caption" className="text-blue-300 text-[8px] mt-1 font-bold">MANTÉN PARA COPIAR</Typography>
+            {/* <Typography variant="caption" className="text-blue-500 font-bold uppercase text-[9px] mb-1">REALIZARÁ (RESULTADO)</Typography> */}
+            <View className="flex-row items-center">
+              <Typography variant="h2" weight="bold" className="text-white">
+                {!isFromVes ? 'Bs' : otherCurrency === 'USD' ? '$' : otherCurrency}
+              </Typography>
+              {isFromVes && <Ionicons name="caret-down" size={12} color="#3b82f6" className="ml-1" />}
+            </View>
+            <Typography variant="h2" weight="bold" className="text-white mt-1" numberOfLines={1}>{result.toFixed(2)}</Typography>
+            <Typography variant="caption" className="text-blue-300 text-[8px] mt-1 font-bold">MANTÉN PARA COPIAR</Typography>
           </TouchableOpacity>
         </View>
 
         {/* Rate Selector */}
         <View className="mb-8">
-           <View className="flex-row bg-gray-900 p-1 rounded-2xl mb-4 border border-white/5">
-              {(['BCV', 'PARALLEL', 'MANUAL'] as RateSource[]).map((s) => (
-                <TouchableOpacity 
-                  key={s}
-                  onPress={() => setRateSource(s)}
-                  className={`flex-1 py-2 rounded-xl items-center ${rateSource === s ? 'bg-blue-500' : ''}`}
-                >
-                  <Typography variant="label" weight="bold" className={rateSource === s ? 'text-white' : 'text-gray-500'} style={{ fontSize: 10 }}>
-                    {s === 'BCV' ? 'OFICIAL' : s === 'PARALLEL' ? 'MONITOR' : 'MANUAL'}
-                  </Typography>
-                </TouchableOpacity>
-              ))}
-           </View>
+          <View className="flex-row bg-gray-900 p-1 rounded-2xl mb-4 border border-white/5">
+            {(['BCV', 'PARALLEL', 'MANUAL'] as RateSource[]).map((s) => (
+              <TouchableOpacity
+                key={s}
+                onPress={() => setRateSource(s)}
+                className={`flex-1 py-2 rounded-xl items-center ${rateSource === s ? 'bg-blue-500' : ''}`}
+              >
+                <Typography variant="label" weight="bold" className={rateSource === s ? 'text-white' : 'text-gray-500'} style={{ fontSize: 10 }}>
+                  {s === 'BCV' ? 'OFICIAL' : s === 'PARALLEL' ? 'MONITOR' : 'MANUAL'}
+                </Typography>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-           {/* Rate Value Display/Input */}
-           <View className="bg-white/5 border border-white/5 p-4 rounded-2xl flex-row items-center justify-between">
-              <View>
-                <Typography variant="caption" className="text-gray-500 font-bold uppercase text-[9px]">Tasa Aplicada</Typography>
-                <View className="flex-row items-center mt-1">
-                  <Typography className="text-gray-500 mr-2 font-bold">1 {otherCurrency} =</Typography>
-                  <TextInput
-                    value={manualRate}
-                    onChangeText={setManualRate}
-                    editable={rateSource === 'MANUAL'}
-                    keyboardType="numeric"
-                    className={`text-white text-xl font-bold p-0 ${rateSource === 'MANUAL' ? 'text-blue-400' : ''}`}
-                    style={{ fontFamily: 'Outfit_700Bold' }}
-                  />
-                  <Typography className="text-gray-500 ml-2 font-bold">Bs</Typography>
-                </View>
+          {/* Rate Value Display/Input */}
+          <View className="bg-white/5 border border-white/5 p-4 rounded-2xl flex-row items-center justify-between">
+            <View>
+              <Typography variant="caption" className="text-gray-500 font-bold uppercase text-[9px]">Tasa Aplicada</Typography>
+              <View className="flex-row items-center mt-1">
+                <Typography className="text-gray-500 mr-2 font-bold">1 {otherCurrency} =</Typography>
+                <TextInput
+                  value={manualRate}
+                  onChangeText={setManualRate}
+                  editable={rateSource === 'MANUAL'}
+                  keyboardType="numeric"
+                  className={`text-white text-xl font-bold p-0 ${rateSource === 'MANUAL' ? 'text-blue-400' : ''}`}
+                  style={{ fontFamily: 'Outfit_700Bold' }}
+                />
+                <Typography className="text-gray-500 ml-2 font-bold">Bs</Typography>
               </View>
-              {rateSource === 'MANUAL' && (
-                <View className="bg-blue-500/20 p-2 rounded-full">
-                  <Ionicons name="pencil" size={14} color="#3b82f6" />
-                </View>
-              )}
-           </View>
+            </View>
+            {rateSource === 'MANUAL' && (
+              <View className="bg-blue-500/20 p-2 rounded-full">
+                <Ionicons name="pencil" size={14} color="#3b82f6" />
+              </View>
+            )}
+          </View>
         </View>
 
         {/* Keyboard Section */}
-        <View className="-mx-2 mb-10 opacity-90">
-           <CustomNumpad onPress={handleNumpadPress} onDelete={handleNumpadDelete} />
+        <View className="-mx-2 mb-10 opacity-95">
+          <CustomNumpad
+            onPress={handleNumpadPress}
+            onDelete={handleNumpadDelete}
+            onClear={handleNumpadClear}
+            onConfirm={copyToClipboard}
+            confirmColor="#3b82f6"
+          />
         </View>
       </ScrollView>
 
       {/* Currency Modal */}
-      <SelectModal 
+      <SelectModal
         isVisible={showCurrencyModal}
         onClose={() => setShowCurrencyModal(false)}
         title="Seleccionar Divisa"

@@ -7,12 +7,12 @@ import { financeService, Transaction, DashboardResponse } from '@/services/finan
 import { useAuth } from '@/contexts/AuthContext';
 import { FAB } from '@/components/ui/FAB';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { BackgroundAura } from '@/components/ui/BackgroundAura';
 import { LinearGradient } from 'expo-linear-gradient';
-
-type CurrencyType = 'USD' | 'EUR' | 'USDT';
-
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+
+type CurrencyType = 'USD' | 'EUR' | 'USDT';
 
 export default function DashboardScreen() {
   const queryClient = useQueryClient();
@@ -79,8 +79,24 @@ export default function DashboardScreen() {
   const currentSymbol = dashboardData?.currency_symbols ? dashboardData.currency_symbols[selectedCurrency] : '$';
   const bcvRate = dashboardData?.rates?.USD || 0;
 
+  // Determinar color de acento según moneda
+  const getAccentColor = (currency: string = selectedCurrency) => {
+    switch (currency) {
+      case 'USDT': return '#14b8a6';
+      case 'EUR': return '#3b82f6';
+      case 'VES': return '#f59e0b';
+      default: return '#465fff';
+    }
+  };
+
+  const accentColor = getAccentColor();
+
   return (
-    <SafeAreaView className="flex-1 bg-gray-950">
+    <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
+      {/* Luces de ambiente (Auras) */}
+      <BackgroundAura top={-100} left={-100} color={accentColor} size={500} opacity={0.12} />
+      <BackgroundAura top="40%" right="-50%" color="#465fff" size={400} opacity={0.08} />
+
       <ScrollView
         className="flex-1 px-6"
         showsVerticalScrollIndicator={false}
@@ -102,34 +118,21 @@ export default function DashboardScreen() {
             >
               <Ionicons name="calculator-outline" size={22} color="white" />
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={signOut}
-              className="w-12 h-12 rounded-2xl bg-surface-elevated justify-center items-center border border-white/5"
-            >
-              <Ionicons name="log-out-outline" size={22} color="#f43f5e" />
-            </TouchableOpacity>
           </View>
         </View>
 
         {/* Main Balance Card (The Living Vault) */}
-        <GlassCard intensity="high" className="mb-8 relative" style={{ minHeight: 220 }}>
-          <LinearGradient
-            colors={
-              selectedCurrency === 'USDT' ? ['#14b8a620', '#14b8a605'] :
-                selectedCurrency === 'EUR' ? ['#3b82f620', '#3b82f605'] :
-                  ['#465fff20', '#465fff05']
-            }
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            className="absolute inset-0"
-          />
-
+        <GlassCard
+          intensity="high"
+          className="mb-8 relative"
+          style={{ minHeight: 220 }}
+        >
           <View className="p-6">
             <View className="flex-row justify-between items-center mb-8">
               <View className="flex-row items-center">
                 <View
                   className="w-2 h-2 rounded-full mr-2"
-                  style={{ backgroundColor: selectedCurrency === 'USDT' ? '#14b8a6' : selectedCurrency === 'EUR' ? '#3b82f6' : '#465fff' }}
+                  style={{ backgroundColor: accentColor }}
                 />
                 <Typography variant="label" weight="bold" className="text-white/80">Saldo Total</Typography>
               </View>
@@ -202,14 +205,13 @@ export default function DashboardScreen() {
         <View className="mb-10">
           <View className="flex-row justify-between items-end mb-6">
             <View>
-              {/* <Typography variant="label" weight="bold" className="mb-1"></Typography> */}
               <Typography variant="h3" weight="bold">Cuentas</Typography>
             </View>
             <TouchableOpacity
               onPress={() => router.push('/accounts')}
-              className="bg-surface-elevated px-4 py-2 rounded-xl border border-white/5"
+              className="bg-brand-500/10 px-4 py-2 rounded-xl border border-brand-500/20"
             >
-              <Typography className="text-ink-secondary" variant="caption" weight="bold">Ver todas</Typography>
+              <Typography className="text-brand-500" variant="caption" weight="bold">Ver todas</Typography>
             </TouchableOpacity>
           </View>
 
@@ -225,29 +227,19 @@ export default function DashboardScreen() {
                   key={acc.id}
                   className="w-64 p-5 relative overflow-hidden"
                   intensity="medium"
-                  style={{ borderColor: 'rgba(255,255,255,0.1)' }}
                 >
-                  <LinearGradient
-                    colors={[
-                      acc.currency_detail?.code === 'USDT' ? '#14b8a610' :
-                        acc.currency_detail?.code === 'EUR' ? '#3b82f610' :
-                          acc.currency_detail?.code === 'VES' ? '#f59e0b10' : '#465fff10',
-                      'transparent'
-                    ]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0.5, y: 0.5 }}
-                    className="absolute inset-0"
-                  />
                   <View className="flex-row items-center justify-between mb-6">
                     <View className="w-12 h-12 rounded-2xl bg-white/5 justify-center items-center border border-white/5 overflow-hidden">
                       {acc.display_icon ? (
                         <Image source={{ uri: acc.display_icon }} className="w-full h-full" resizeMode="cover" />
                       ) : (
-                        <Typography className="text-2xl">
-                          {acc.currency_detail?.code === 'VES' ? '🇻🇪' :
-                            acc.currency_detail?.code === 'EUR' ? '🇪🇺' :
-                              acc.currency_detail?.code === 'USDT' ? '🌐' : '🇺🇸'}
-                        </Typography>
+                        <View className="w-full h-full items-center justify-center bg-white/5">
+                          <Typography className="text-2xl">
+                            {acc.currency_detail?.code === 'VES' ? '🇻🇪' :
+                              acc.currency_detail?.code === 'EUR' ? '🇪🇺' :
+                                acc.currency_detail?.code === 'USDT' ? '🌐' : '🇺🇸'}
+                          </Typography>
+                        </View>
                       )}
                     </View>
                     <View className="bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-500/20">
@@ -289,23 +281,18 @@ export default function DashboardScreen() {
             <Typography variant="label" weight="bold" className="mb-1">Historial</Typography>
             <Typography variant="h3" weight="bold">Actividad Reciente</Typography>
           </View>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/history')}>
             <Typography className="text-ink-tertiary" weight="bold" variant="caption">Ver todo</Typography>
           </TouchableOpacity>
         </View>
 
-        <GlassCard intensity="medium" className="mb-10 relative overflow-hidden">
-          <LinearGradient
-            colors={['rgba(255,255,255,0.05)', 'transparent']}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 0.3 }}
-            className="absolute inset-0"
-          />
+        <GlassCard intensity="medium" className="mb-4 relative overflow-hidden">
           <View className="p-4">
             {transactions.length > 0 ? (
               transactions.map((tx, index) => (
                 <TouchableOpacity
                   key={tx.id}
+                  onPress={() => router.push(`/transaction/${tx.id}` as any)}
                   className={`flex-row items-center py-4 ${index !== transactions.length - 1 ? 'border-b border-white/5' : ''}`}
                 >
                   <View className="flex-row items-center flex-1">
@@ -339,11 +326,9 @@ export default function DashboardScreen() {
           </View>
         </GlassCard>
 
-        {/* Spacer for bottom Padding */}
-        <View className="h-20" />
+        <View className="h-6" />
       </ScrollView>
 
-      {/* Instant FAB Menu (Popup Estilo Select) */}
       {showFabMenu && (
         <View className="absolute bottom-24 right-8 w-48 bg-gray-900 rounded-3xl border border-gray-700 shadow-2xl overflow-hidden z-50">
           <TouchableOpacity
@@ -367,8 +352,6 @@ export default function DashboardScreen() {
         </View>
       )}
 
-      {/* Action Components: Green Neon FAB */}
-      {/* We can keep it or depend on the Layout FAB. Keeping it here since it was here originally */}
       <FAB
         onPress={() => setShowFabMenu(!showFabMenu)}
         backgroundColor="#14b8a6"

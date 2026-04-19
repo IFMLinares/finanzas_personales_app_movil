@@ -39,6 +39,18 @@ export default function TabLayout() {
         }}
       />
       
+      <Tabs.Screen
+        name="history"
+        options={{
+          title: 'Historial',
+          tabBarIcon: ({ color, focused }) => (
+            <View className="items-center justify-center">
+              <Ionicons name={focused ? 'receipt' : 'receipt-outline'} size={24} color={color} />
+            </View>
+          ),
+        }}
+      />
+
       {/* Phantom Screen for FAB */}
       <Tabs.Screen
         name="create_action"
@@ -62,12 +74,12 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="explore"
+        name="settings"
         options={{
-          title: 'Operaciones',
+          title: 'Más',
           tabBarIcon: ({ color, focused }) => (
             <View className="items-center justify-center">
-              <Ionicons name={focused ? 'swap-horizontal' : 'swap-horizontal-outline'} size={24} color={color} />
+              <Ionicons name={focused ? 'grid' : 'grid-outline'} size={24} color={color} />
             </View>
           ),
         }}

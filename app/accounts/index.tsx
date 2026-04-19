@@ -6,9 +6,9 @@ import { useRouter } from 'expo-router';
 import { Typography } from '@/components/ui/Typography';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { financeService, Account } from '@/services/financeService';
-import DraggableFlatList, { 
-  RenderItemParams, 
-  ScaleDecorator 
+import DraggableFlatList, {
+  RenderItemParams,
+  ScaleDecorator
 } from 'react-native-draggable-flatlist';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -53,15 +53,15 @@ export default function AccountsListScreen() {
           onPress={() => router.push(`/accounts/${item.id}`)}
           className="mb-4"
         >
-          <GlassCard 
-            intensity={isActive ? "high" : "medium"} 
+          <GlassCard
+            intensity={isActive ? "high" : "medium"}
             className={`p-4 flex-row items-center border relative overflow-hidden ${isActive ? 'border-brand-500' : 'border-white/10'}`}
           >
             <LinearGradient
               colors={[
-                item.currency_detail?.code === 'USDT' ? '#14b8a610' : 
-                item.currency_detail?.code === 'EUR' ? '#3b82f610' : 
-                item.currency_detail?.code === 'VES' ? '#f59e0b10' : '#465fff10',
+                item.currency_detail?.code === 'USDT' ? '#14b8a610' :
+                  item.currency_detail?.code === 'EUR' ? '#3b82f610' :
+                    item.currency_detail?.code === 'VES' ? '#f59e0b10' : '#465fff10',
                 'transparent'
               ]}
               start={{ x: 0, y: 0 }}
@@ -74,15 +74,20 @@ export default function AccountsListScreen() {
             </View>
 
             {/* Icon fallback or custom */}
-            <View className="w-12 h-12 rounded-2xl bg-white/5 justify-center items-center border border-white/5 mr-4 overflow-hidden">
+            <View className="w-12 h-12 rounded-2xl bg-white/5 justify-center items-center border border-white/5 overflow-hidden mr-4">
               {item.display_icon ? (
                 <Image source={{ uri: item.display_icon }} className="w-full h-full" resizeMode="cover" />
               ) : (
-                <Typography className="text-2xl">
-                  {item.currency_detail?.code === 'VES' ? '🇻🇪' :
-                   item.currency_detail?.code === 'EUR' ? '🇪🇺' :
-                   item.currency_detail?.code === 'USDT' ? '🌐' : '🇺🇸'}
-                </Typography>
+                <LinearGradient
+                  colors={['#1e293b', '#0f172a']}
+                  className="w-full h-full items-center justify-center"
+                >
+                  <Ionicons 
+                    name={item.currency_detail?.code === 'VES' ? "cash-outline" : "logo-usd"} 
+                    size={20} 
+                    color="#94a3b8" 
+                  />
+                </LinearGradient>
               )}
             </View>
 
@@ -120,18 +125,18 @@ export default function AccountsListScreen() {
         <View className="flex-1 px-6">
           {/* Header */}
           <View className="flex-row items-center justify-between mt-6 mb-8">
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => router.back()}
               className="w-10 h-10 rounded-xl bg-white/5 justify-center items-center"
             >
               <Ionicons name="arrow-back" size={20} color="white" />
             </TouchableOpacity>
             <Typography variant="h3" weight="bold" className="text-white">Mis Cuentas</Typography>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => router.push('/accounts/create')}
               className="w-10 h-10 rounded-xl bg-brand-500/10 justify-center items-center"
             >
-              <Ionicons name="plus" size={20} color="#465fff" />
+              <Ionicons name="add" size={20} color="#465fff" />
             </TouchableOpacity>
           </View>
 

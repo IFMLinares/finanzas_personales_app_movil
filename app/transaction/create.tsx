@@ -6,6 +6,8 @@ import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Typography } from '@/components/ui/Typography';
 import { CustomNumpad } from '@/components/ui/CustomNumpad';
+import { CreateCategoryModal } from '@/components/ui/CreateCategoryModal';
+import { SelectModal } from '@/components/ui/SelectModal';
 import { financeService } from '@/services/financeService';
 import { transactionService } from '@/services/transactionService';
 
@@ -20,9 +22,11 @@ export default function CreateTransactionScreen() {
   const [inputCurrency, setInputCurrency] = useState<'USD' | 'VES'>('USD');
   const [bcvRate, setBcvRate] = useState(36.15); // Default, should load from API
 
-  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [selectedAccountId, setSelectedAccountId] = useState<number | string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | string | null>(null);
   const [notes, setNotes] = useState('');
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showCreateCategoryModal, setShowCreateCategoryModal] = useState(false);
 
   // Queries
   const { data: dashboardData } = useQuery({
@@ -49,7 +53,7 @@ export default function CreateTransactionScreen() {
 
   useEffect(() => {
     // try to find a default category based on type or just pick the first one
-    const applicableCategories = categories.filter(c => c.type === (type === 'IN' ? 'income' : 'expense'));
+    const applicableCategories = categories.filter(c => c.type === type);
     if (applicableCategories.length > 0 && !selectedCategoryId) {
       setSelectedCategoryId(applicableCategories[0].id);
     }
@@ -97,6 +101,10 @@ export default function CreateTransactionScreen() {
     }
   };
 
+  const handleNumpadClear = () => {
+    setAmount('0');
+  };
+
   const toggleCurrency = () => {
     setInputCurrency(prev => prev === 'USD' ? 'VES' : 'USD');
     setAmount('0'); 
@@ -131,6 +139,24 @@ export default function CreateTransactionScreen() {
       date: new Date().toISOString(),
       notes: notes || null,
     });
+  };
+
+  const handleCreateCategory = async (name: string, icon: string) => {
+    try {
+      const newCategory = await financeService.createCategory({
+        name,
+        type: type,
+        icon
+      });
+      if (newCategory) {
+        queryClient.invalidateQueries({ queryKey: ['categories'] });
+        setSelectedCategoryId(newCategory.id);
+        setShowCreateCategoryModal(false);
+      }
+    } catch (error) {
+      console.error('Error creating category:', error);
+      Alert.alert('Error', 'No se pudo crear la categoría.');
+    }
   };
 
   const isExpense = type === 'EX';
@@ -230,20 +256,13 @@ export default function CreateTransactionScreen() {
       {/* Dynamic Bottom Area */}
       {step === 'amount' ? (
         <View className="pb-8 pt-4 px-2 bg-gray-950">
-          <CustomNumpad onPress={handleNumpadPress} onDelete={handleNumpadDelete} />
-          
-          <View className="px-4 mt-6">
-            <TouchableOpacity 
-              className="w-full h-16 rounded-2xl justify-center items-center"
-              style={{ backgroundColor: colorBase }}
-              activeOpacity={0.8}
-              onPress={handleNext}
-            >
-              <Typography variant="h3" weight="bold" className="text-white">
-                Continuar
-              </Typography>
-            </TouchableOpacity>
-          </View>
+          <CustomNumpad 
+            onPress={handleNumpadPress} 
+            onDelete={handleNumpadDelete}
+            onClear={handleNumpadClear}
+            onConfirm={handleNext}
+            confirmColor={colorBase}
+          />
         </View>
       ) : (
         <View className="flex-1 bg-surface-overlay rounded-t-[40px] px-6 pt-8 border-t border-white/5 shadow-2xl">
@@ -261,13 +280,13 @@ export default function CreateTransactionScreen() {
                      <TouchableOpacity 
                        key={acc.id}
                        onPress={() => setSelectedAccountId(acc.id)}
-                       className={`px-5 py-4 rounded-2xl border ${isSelected ? `border-[${colorBase}] bg-[${colorBase}]/10` : 'border-white/5 bg-white/5'}`}
+                       className={`px-5 py-4 rounded-2xl border ${isSelected ? `border-emerald-500 bg-emerald-500/10` : 'border-white/5 bg-white/5'}`}
                      >
                        <Typography variant="label" weight="bold" className={isSelected ? 'text-white' : 'text-ink-tertiary'}>
                          {acc.name}
                        </Typography>
                        <Typography variant="caption" className={isSelected ? 'text-white/80' : 'text-ink-muted'}>
-                         {acc.currency_detail?.symbol} {parseFloat(acc.balance).toFixed(2)}
+                         {acc.currency_detail?.symbol} {typeof acc.balance === 'number' ? acc.balance.toFixed(2) : parseFloat(acc.balance).toFixed(2)}
                        </Typography>
                      </TouchableOpacity>
                    );
@@ -280,22 +299,38 @@ export default function CreateTransactionScreen() {
              {loadingCategories ? (
                <ActivityIndicator color={colorBase} />
              ) : (
-               <View className="flex-row flex-wrap gap-3 mb-8">
-                {categories.filter(c => c.type === (isExpense ? 'expense' : 'income')).map((cat) => {
-                  const isSelected = selectedCategoryId === cat.id;
-                  return (
-                    <TouchableOpacity
-                      key={cat.id}
-                      onPress={() => setSelectedCategoryId(cat.id)}
-                      className={`flex-row items-center px-4 py-2.5 rounded-full border ${isSelected ? `border-[${colorBase}] bg-[${colorBase}]/10` : 'border-white/5 bg-white/5'}`}
-                    >
-                      {cat.icon && <Ionicons name={cat.icon as any} size={14} color={isSelected ? colorBase : '#64748b'} className="mr-2" />}
-                      <Typography variant="label" weight={isSelected ? 'bold' : 'medium'} className={isSelected ? 'text-white' : 'text-ink-tertiary'}>
-                        {cat.name}
-                      </Typography>
-                    </TouchableOpacity>
-                  );
-                })}
+               <View className="mb-8">
+                 <TouchableOpacity
+                   onPress={() => setShowCategoryModal(true)}
+                   className="flex-row items-center justify-between bg-white/5 border border-white/10 p-5 rounded-2xl"
+                 >
+                   <View className="flex-row items-center">
+                     <View className="w-10 h-10 rounded-xl bg-white/5 justify-center items-center mr-4">
+                       <Ionicons 
+                         name={(categories.find(c => c.id === selectedCategoryId)?.icon || 'grid-outline') as any} 
+                         size={20} 
+                         color={colorBase} 
+                       />
+                     </View>
+                     <View>
+                        <Typography weight="bold" className="text-white">
+                          {categories.find(c => c.id === selectedCategoryId)?.name || 'Seleccionar Categoría'}
+                        </Typography>
+                        <Typography variant="caption" className="text-ink-tertiary">
+                          {isExpense ? 'Gasto' : 'Ingreso'}
+                        </Typography>
+                     </View>
+                   </View>
+                   <Ionicons name="chevron-forward" size={18} color="#475569" />
+                 </TouchableOpacity>
+
+                 <TouchableOpacity
+                   onPress={() => setShowCreateCategoryModal(true)}
+                   className="mt-3 flex-row items-center self-end px-4 py-2 bg-white/5 rounded-full border border-dashed border-white/20"
+                 >
+                   <Ionicons name="add" size={14} color="#64748b" className="mr-1" />
+                   <Typography variant="caption" className="text-ink-tertiary">Nueva</Typography>
+                 </TouchableOpacity>
                </View>
              )}
 
@@ -324,6 +359,26 @@ export default function CreateTransactionScreen() {
         </View>
       )}
 
+      <SelectModal 
+        isVisible={showCategoryModal} 
+        onClose={() => setShowCategoryModal(false)} 
+        title="Selecciona Categoría" 
+        options={financeService.getHierarchicalCategories(categories, type)} 
+        selectedValue={selectedCategoryId || undefined} 
+        onSelect={(opt) => setSelectedCategoryId(opt.id)}
+        footerLabel="Gestionar Categorías"
+        onFooterPress={() => {
+          setShowCategoryModal(false);
+          router.push('/category' as any);
+        }}
+      />
+
+      <CreateCategoryModal
+        isVisible={showCreateCategoryModal}
+        onClose={() => setShowCreateCategoryModal(false)}
+        onSubmit={handleCreateCategory}
+        type={type}
+      />
     </SafeAreaView>
   );
 }

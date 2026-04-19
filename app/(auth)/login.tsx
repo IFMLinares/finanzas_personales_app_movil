@@ -7,6 +7,7 @@ import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Typography } from '../../components/ui/Typography';
 import { GlassCard } from '../../components/ui/GlassCard';
+import { BackgroundAura } from '../../components/ui/BackgroundAura';
 import { parseApiError } from '../../utils/errorUtils';
 
 export default function LoginScreen() {
@@ -44,16 +45,23 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-950">
+      <BackgroundAura top="10%" left="-20%" color="#465fff" size={400} opacity={0.15} />
+      <BackgroundAura bottom="-10%" right="-10%" color="#3b82f6" size={300} opacity={0.1} />
+      
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-8 py-12">
+        <ScrollView 
+          contentContainerStyle={{ flexGrow: 1 }} 
+          className="px-8 py-12"
+          keyboardShouldPersistTaps="handled"
+        >
           <View className="mb-16 mt-10">
             <Typography variant="h1" weight="bold" className="text-white mb-2">
               Finanzas
             </Typography>
-            <Typography variant="body" className="text-ink-secondary">
+            <Typography variant="body" className="text-white/80">
               Gestiona tu capital con precisión tecnológica.
             </Typography>
           </View>
@@ -92,12 +100,12 @@ export default function LoginScreen() {
             </View>
 
             <View className="flex-row justify-center items-center">
-              <Typography variant="caption" className="text-ink-muted mr-2">
+              <Typography variant="caption" className="text-white/50 mr-2">
                 ¿Nuevo en la plataforma?
               </Typography>
               <Link href="/(auth)/register" asChild>
                 <TouchableOpacity>
-                  <Typography variant="caption" weight="bold" className="text-vault-usd">
+                  <Typography variant="caption" weight="bold" className="text-brand-500">
                     Crea una cuenta
                   </Typography>
                 </TouchableOpacity>
@@ -106,7 +114,7 @@ export default function LoginScreen() {
           </GlassCard>
 
           <View className="flex-1 justify-end items-center mt-12">
-            <Typography variant="label" className="text-ink-muted">
+            <Typography variant="label" className="text-white/40">
               © 2026 Ecosistema Finanzas Premium
             </Typography>
           </View>

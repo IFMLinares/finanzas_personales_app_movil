@@ -9,39 +9,38 @@ interface InputProps extends TextInputProps {
   showPasswordToggle?: boolean;
 }
 
-export function Input({ 
-  label, 
-  error, 
-  onFocus, 
-  onBlur, 
+export function Input({
+  label,
+  error,
+  onFocus,
+  onBlur,
   secureTextEntry,
   autoCapitalize,
-  ...props 
+  ...props
 }: InputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   // Determinar si es un campo de contraseña y aplicar reglas de usuario
   const isPassword = secureTextEntry || props.textContentType === 'password';
-  
+
   // Deshabilitar autocapitalización en contraseñas por defecto si no se especifica
   const effectiveAutoCapitalize = isPassword ? 'none' : autoCapitalize;
 
   return (
     <View className="mb-6">
       {label && (
-        <Typography variant="label" className="text-gray-500 mb-2 ml-1">
+        <Typography variant="label" className="text-white/90 mb-2 ml-1">
           {label}
         </Typography>
       )}
       <View
-        className={`bg-white/5 border rounded-2xl h-14 px-4 flex-row items-center ${
-          error ? 'border-error-500/50' : isFocused ? 'border-brand-500' : 'border-white/10'
-        }`}
+        className={`bg-white/5 border rounded-2xl h-14 px-4 flex-row items-center transition-colors ${error ? 'border-error-500/50' : isFocused ? 'border-brand-500 bg-brand-500/5' : 'border-white/10'
+          }`}
       >
         <TextInput
           className="flex-1 text-white text-base h-full"
-          placeholderTextColor="#4b5563"
+          placeholderTextColor="rgba(255, 255, 255, 0.7)"
           secureTextEntry={isPassword && !isPasswordVisible}
           autoCapitalize={effectiveAutoCapitalize}
           selectionColor="#465fff"
@@ -55,16 +54,16 @@ export function Input({
           }}
           {...props}
         />
-        
+
         {isPassword && (
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => setIsPasswordVisible(!isPasswordVisible)}
             className="h-full justify-center pl-2"
           >
-            <Ionicons 
-              name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'} 
-              size={20} 
-              color={isFocused ? '#465fff' : '#4b5563'} 
+            <Ionicons
+              name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+              size={20}
+              color={isFocused ? '#465fff' : 'rgba(255, 255, 255, 0.6)'}
             />
           </TouchableOpacity>
         )}
