@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter, useSegments } from 'expo-router';
 import authService from '../services/authService';
 
@@ -51,7 +52,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (token) {
         // En una app real, aquí haríamos una petición al backend para validar el token
         // y obtener los datos frescos del usuario. Por ahora, simulamos que el usuario está logueado.
-        setUser({ authenticated: true });
+        
+        // Verificación Geométrica/Biométrica
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+        if (hasHardware && isEnrolled) {
+          const result = await LocalAuthentication.authenticateAsync({
+            promptMessage: 'Autentícate para continuar a Finanzas',
+            fallbackLabel: 'Usar PIN o Contraseña',
+            cancelLabel: 'Cancelar',
+          });
+
+          if (result.success) {
+            setUser({ authenticated: true });
+          } else {
+            // Si cancelan el prompt o falla, se redirige al login sin setear el usuario
+            setUser(null);
+          }
+        } else {
+          // Fallback: Si no posee biometría, pasamos directamente como estaba antes
+          setUser({ authenticated: true });
+        }
       }
     } catch (e) {
       console.error('Error loading token', e);

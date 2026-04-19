@@ -8,19 +8,26 @@ import { Typography } from '@/components/ui/Typography';
 import { SelectModal } from '@/components/ui/SelectModal';
 import { CustomNumpad } from '@/components/ui/CustomNumpad';
 import { CreateCategoryModal } from '@/components/ui/CreateCategoryModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { financeService, DashboardResponse } from '@/services/financeService';
 import { transactionService } from '@/services/transactionService';
+import { useToast } from '@/contexts/ToastContext';
 
 export default function NewTransactionScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { type: initialType } = useLocalSearchParams();
+  const { type: initialType, id } = useLocalSearchParams();
+  const isEditing = !!id;
 
   const [type, setType] = useState<'IN' | 'EX' | 'TR'>((initialType as any) || 'EX');
   const [amount, setAmount] = useState('0');
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [date] = useState(new Date());
+
+  const { showToast } = useToast();
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const [selectedAccount, setSelectedAccount] = useState<any>(null);
   const [selectedDestinationAccount, setSelectedDestinationAccount] = useState<any>(null);
@@ -50,17 +57,26 @@ export default function NewTransactionScreen() {
     queryFn: () => financeService.getCategories(),
   });
 
+  // Query para cargar la transacción si estamos editando
+  const { data: editingTx, isLoading: loadingTx } = useQuery({
+    queryKey: ['transaction', id],
+    queryFn: () => transactionService.getTransactionById(id as string),
+    enabled: isEditing,
+  });
+
   const mutation = useMutation({
-    mutationFn: (data: any) => transactionService.createTransaction(data),
+    mutationFn: (data: any) => isEditing 
+      ? transactionService.updateTransaction(id as string, data)
+      : transactionService.createTransaction(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       queryClient.invalidateQueries({ queryKey: ['recentTransactions'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardSummary'] });
+      showToast({ message: isEditing ? 'Movimiento actualizado' : 'Movimiento guardado exitosamente', type: 'success' });
       router.back();
     },
     onError: (error: any) => {
       console.error('Error creating transaction:', error.response?.data);
-      // Extraer errores de validación por campo (formato DRF)
       const data = error.response?.data;
       let errorMsg = 'No se pudo registrar el movimiento.';
 
@@ -70,16 +86,46 @@ export default function NewTransactionScreen() {
         } else if (data.detail) {
           errorMsg = data.detail;
         } else {
-          // Si es un objeto de errores de campo { "category": ["error"] }
-          errorMsg = Object.entries(data)
-            .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
-            .join('\n');
+          setErrors(data);
+          errorMsg = 'Revisa los campos en rojo para continuar.';
         }
       }
 
-      Alert.alert('Error en el Registro', errorMsg);
+      showToast({ message: errorMsg, type: 'error' });
     }
   });
+
+  // Efecto para cargar los datos de la transacción en modo edición
+  useEffect(() => {
+    if (isEditing && editingTx) {
+      setType(editingTx.type);
+      setAmount(editingTx.amount.toString());
+      setTitle(editingTx.title || '');
+      setNotes(editingTx.notes || '');
+      
+      if (editingTx.account_detail) {
+        setSelectedAccount(editingTx.account_detail);
+      }
+      
+      if (editingTx.category_detail) {
+        setSelectedCategory({
+          id: editingTx.category_detail.id,
+          label: editingTx.category_detail.name,
+          icon: editingTx.category_detail.icon || 'bookmark-outline'
+        });
+      }
+
+      if (editingTx.type === 'TR') {
+        if (editingTx.destination_account_detail) {
+          setSelectedDestinationAccount(editingTx.destination_account_detail);
+        }
+        if (editingTx.exchange_rate) {
+          setExchangeRate(editingTx.exchange_rate.toString());
+          setRateSource('MANUAL'); // Siempre manual al editar para no romper lo guardado
+        }
+      }
+    }
+  }, [isEditing, editingTx]);
 
   // Lógica de tasas automáticas
   useEffect(() => {
@@ -148,10 +194,18 @@ export default function NewTransactionScreen() {
   };
 
   const handleSave = () => {
-    if (!selectedAccount || parseFloat(amount) <= 0) {
-      Alert.alert('Error', 'Por favor selecciona una cuenta y un monto mayor a 0.');
+    let newErrors: Record<string, string> = {};
+    if (!selectedAccount) newErrors.account = 'Debes seleccionar una cuenta';
+    if (parseFloat(amount) <= 0) newErrors.amount = 'El monto debe ser mayor a 0';
+    if (type === 'TR' && !selectedDestinationAccount) newErrors.destination_account = 'Selecciona la cuenta destino';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      showToast({ message: 'Por favor, completa los campos marcados en rojo', type: 'error' });
       return;
     }
+
+    setErrors({});
 
     const isTransfer = type === 'TR';
 
@@ -200,7 +254,7 @@ export default function NewTransactionScreen() {
       setShowCreateCategoryModal(false);
     } catch (error) {
       console.error('Error creating category:', error);
-      Alert.alert('Error', 'No se pudo crear la categoría.');
+      showToast({ message: 'No se pudo crear la categoría.', type: 'error' });
     }
   };
 
@@ -231,58 +285,74 @@ export default function NewTransactionScreen() {
             </TouchableOpacity>
           ))}
         </View>
-        <View className="w-6" />
+        <View className="w-6">
+          {isEditing && (
+            <TouchableOpacity onPress={() => setShowDeleteConfirm(true)}>
+              <Ionicons name="trash-outline" size={22} color="#f43f5e" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       <ScrollView className="flex-1 px-5 pt-6" showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, paddingBottom: 16 }}>
         {/* Amount Display */}
         <View className="items-center mb-8">
-          <Typography variant="label" weight="bold" className="text-gray-500 mb-2 uppercase tracking-wide">Monto</Typography>
-          <Typography variant="h1" weight="bold" style={{ color: accentColor, fontSize: 52, lineHeight: 56 }} className="tracking-tighter py-1">
+          <Typography variant="label" weight="bold" className={`mb-2 uppercase tracking-wide ${errors.amount ? 'text-error-500' : 'text-gray-500'}`}>Monto</Typography>
+          <Typography variant="h1" weight="bold" style={{ color: errors.amount ? '#f04438' : accentColor, fontSize: 52, lineHeight: 56 }} className="tracking-tighter py-1">
             {isIncome ? '+ ' : isExpense ? '- ' : ''}${amount}
           </Typography>
+          {errors.amount && <Typography variant="caption" className="text-error-500 mt-2">{errors.amount}</Typography>}
         </View>
 
         {/* Dynamic Fields */}
         <View className="gap-3 mb-6">
           {!isTransfer && (
-            <TouchableOpacity
-              onPress={() => setShowAccountModal(true)}
-              className="flex-row items-center justify-between bg-white/5 border border-white/5 p-4 rounded-2xl"
-            >
-              <View className="flex-row items-center">
-                <View className="w-8 h-8 rounded-full bg-white/5 justify-center items-center mr-3">
-                  <Ionicons name="wallet-outline" size={16} color={accentColor} />
+            <View>
+              <TouchableOpacity
+                onPress={() => { setShowAccountModal(true); setErrors(prev => ({...prev, account: ''})); }}
+                className={`flex-row items-center justify-between border p-4 rounded-2xl ${errors.account ? 'border-error-500/50 bg-error-500/5' : 'bg-white/5 border-white/5'}`}
+              >
+                <View className="flex-row items-center">
+                  <View className="w-8 h-8 rounded-full bg-white/5 justify-center items-center mr-3">
+                    <Ionicons name="wallet-outline" size={16} color={accentColor} />
+                  </View>
+                  <View>
+                    <Typography variant="caption" className="text-gray-500 font-bold uppercase text-[10px]">Cuenta</Typography>
+                    <Typography className={selectedAccount ? 'text-white' : 'text-gray-400'} weight="semibold">
+                      {selectedAccount ? (selectedAccount as any).name : 'Seleccionar cuenta'}
+                    </Typography>
+                  </View>
                 </View>
-                <View>
-                  <Typography variant="caption" className="text-gray-500 font-bold uppercase text-[10px]">Cuenta</Typography>
-                  <Typography className={selectedAccount ? 'text-white' : 'text-gray-400'} weight="semibold">
-                    {selectedAccount ? (selectedAccount as any).name : 'Seleccionar cuenta'}
-                  </Typography>
-                </View>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color="#4b5563" />
-            </TouchableOpacity>
+                <Ionicons name="chevron-forward" size={16} color="#4b5563" />
+              </TouchableOpacity>
+              {errors.account && <Typography variant="caption" className="text-error-500 mt-1 ml-1">{errors.account}</Typography>}
+            </View>
           )}
 
           {isTransfer && (
             <>
               <View className="flex-row items-center gap-2">
-                <TouchableOpacity onPress={() => setShowAccountModal(true)} className="flex-1 bg-white/5 border border-white/5 p-3 rounded-2xl h-20 justify-center">
-                  <Typography variant="caption" className="text-gray-500 font-bold uppercase text-[9px]">Desde</Typography>
-                  <Typography className={selectedAccount ? 'text-white' : 'text-gray-400'} weight="semibold" numberOfLines={1}>{selectedAccount ? selectedAccount.name : 'Origen'}</Typography>
-                  {selectedAccount && <Typography className="text-blue-500 text-[10px] font-bold">{selectedAccount.currency_detail.symbol} {selectedAccount.balance}</Typography>}
-                </TouchableOpacity>
+                <View className="flex-1">
+                  <TouchableOpacity onPress={() => { setShowAccountModal(true); setErrors(prev => ({...prev, account: ''})); }} className={`border p-3 rounded-2xl h-20 justify-center ${errors.account ? 'border-error-500/50 bg-error-500/5' : 'bg-white/5 border-white/5'}`}>
+                    <Typography variant="caption" className="text-gray-500 font-bold uppercase text-[9px]">Desde</Typography>
+                    <Typography className={selectedAccount ? 'text-white' : 'text-gray-400'} weight="semibold" numberOfLines={1}>{selectedAccount ? selectedAccount.name : 'Origen'}</Typography>
+                    {selectedAccount && <Typography className="text-blue-500 text-[10px] font-bold">{selectedAccount.currency_detail.symbol} {selectedAccount.balance}</Typography>}
+                  </TouchableOpacity>
+                  {errors.account && <Typography variant="caption" className="text-error-500 mt-1 ml-1">{errors.account}</Typography>}
+                </View>
 
-                <View className="bg-gray-900 w-8 h-8 rounded-full items-center justify-center border border-white/5 z-10">
+                <View className="bg-gray-900 w-8 h-8 rounded-full items-center justify-center border border-white/5 z-10 mx-[-4px]">
                   <Ionicons name="swap-horizontal" size={14} color="#64748b" />
                 </View>
 
-                <TouchableOpacity onPress={() => setShowDestinationAccountModal(true)} className="flex-1 bg-white/5 border border-white/5 p-3 rounded-2xl h-20 justify-center">
-                  <Typography variant="caption" className="text-gray-500 font-bold uppercase text-[9px]">Hacia</Typography>
-                  <Typography className={selectedDestinationAccount ? 'text-white' : 'text-gray-400'} weight="semibold" numberOfLines={1}>{selectedDestinationAccount ? selectedDestinationAccount.name : 'Destino'}</Typography>
-                  {selectedDestinationAccount && <Typography className="text-blue-500 text-[10px] font-bold">Llega: {selectedDestinationAccount.currency_detail.symbol} {destinationAmount}</Typography>}
-                </TouchableOpacity>
+                <View className="flex-1">
+                  <TouchableOpacity onPress={() => { setShowDestinationAccountModal(true); setErrors(prev => ({...prev, destination_account: ''})); }} className={`border p-3 rounded-2xl h-20 justify-center ${errors.destination_account ? 'border-error-500/50 bg-error-500/5' : 'bg-white/5 border-white/5'}`}>
+                    <Typography variant="caption" className="text-gray-500 font-bold uppercase text-[9px]">Hacia</Typography>
+                    <Typography className={selectedDestinationAccount ? 'text-white' : 'text-gray-400'} weight="semibold" numberOfLines={1}>{selectedDestinationAccount ? selectedDestinationAccount.name : 'Destino'}</Typography>
+                    {selectedDestinationAccount && <Typography className="text-blue-500 text-[10px] font-bold">Llega: {selectedDestinationAccount.currency_detail.symbol} {destinationAmount}</Typography>}
+                  </TouchableOpacity>
+                  {errors.destination_account && <Typography variant="caption" className="text-error-500 mt-1 ml-1">{errors.destination_account}</Typography>}
+                </View>
               </View>
 
               {/* Selector de Tasa - Solo si las monedas son distintas */}
@@ -328,47 +398,55 @@ export default function NewTransactionScreen() {
                   </View>
                 </View>
               )}
-
             </>
           )}
 
           {!isTransfer && (
             <>
-              <TouchableOpacity onPress={() => setShowCategoryModal(true)} className="flex-row items-center justify-between bg-white/5 border border-white/5 p-4 rounded-2xl">
-                <View className="flex-row items-center">
-                  <View className="w-8 h-8 rounded-full bg-white/5 justify-center items-center mr-3">
-                    <Ionicons name={selectedCategory?.icon || "grid-outline"} size={16} color={accentColor} />
+              <View>
+                <TouchableOpacity onPress={() => { setShowCategoryModal(true); setErrors(prev => ({...prev, category: ''})); }} className={`flex-row items-center justify-between border p-4 rounded-2xl ${errors.category ? 'border-error-500/50 bg-error-500/5' : 'bg-white/5 border-white/5'}`}>
+                  <View className="flex-row items-center">
+                    <View className="w-8 h-8 rounded-full bg-white/5 justify-center items-center mr-3">
+                      <Ionicons name={selectedCategory?.icon || "grid-outline"} size={16} color={accentColor} />
+                    </View>
+                    <View>
+                      <Typography variant="caption" className="text-gray-500 font-bold uppercase text-[10px]">Categoría</Typography>
+                      <Typography className={selectedCategory ? 'text-white' : 'text-gray-400'} weight="semibold">{selectedCategory ? selectedCategory.label : 'Seleccionar categoría'}</Typography>
+                    </View>
                   </View>
-                  <View>
-                    <Typography variant="caption" className="text-gray-500 font-bold uppercase text-[10px]">Categoría</Typography>
-                    <Typography className={selectedCategory ? 'text-white' : 'text-gray-400'} weight="semibold">{selectedCategory ? selectedCategory.label : 'Seleccionar categoría'}</Typography>
-                  </View>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color="#4b5563" />
-              </TouchableOpacity>
-
-              <View className="bg-white/5 border border-white/5 px-4 h-14 rounded-2xl flex-row items-center mb-3">
-                <Ionicons name="pricetag-outline" size={18} color="#64748b" style={{ marginRight: 12 }} />
-                <TextInput 
-                  value={title} 
-                  onChangeText={setTitle} 
-                  placeholder="Concepto (ej. Almuerzo, Gasolina)" 
-                  placeholderTextColor="#4b5563" 
-                  className="flex-1 text-white font-medium" 
-                  style={{ fontFamily: 'Outfit_400Regular' }} 
-                />
+                  <Ionicons name="chevron-forward" size={16} color="#4b5563" />
+                </TouchableOpacity>
+                {errors.category && <Typography variant="caption" className="text-error-500 mt-1 ml-1">{errors.category}</Typography>}
               </View>
 
-              <View className="bg-white/5 border border-white/5 px-4 h-14 rounded-2xl flex-row items-center">
-                <Ionicons name="document-text-outline" size={18} color="#64748b" style={{ marginRight: 12 }} />
-                <TextInput 
-                  value={notes} 
-                  onChangeText={setNotes} 
-                  placeholder="Notas adicionales (opcional)" 
-                  placeholderTextColor="#4b5563" 
-                  className="flex-1 text-white font-medium" 
-                  style={{ fontFamily: 'Outfit_400Regular' }} 
-                />
+              <View>
+                <View className={`border px-4 h-14 rounded-2xl flex-row items-center transition-colors ${errors.title ? 'border-error-500/50 bg-error-500/5' : 'bg-white/5 border-white/5'}`}>
+                  <Ionicons name="pricetag-outline" size={18} color="#64748b" style={{ marginRight: 12 }} />
+                  <TextInput 
+                    value={title} 
+                    onChangeText={text => { setTitle(text); setErrors(prev => ({...prev, title: ''})); }} 
+                    placeholder="Concepto (ej. Almuerzo, Gasolina)" 
+                    placeholderTextColor="#4b5563" 
+                    className="flex-1 text-white font-medium h-full" 
+                    style={{ fontFamily: 'Outfit_400Regular' }} 
+                  />
+                </View>
+                {errors.title && <Typography variant="caption" className="text-error-500 mt-1 ml-1">{errors.title}</Typography>}
+              </View>
+
+              <View>
+                <View className={`border px-4 h-14 rounded-2xl flex-row items-center transition-colors ${errors.notes ? 'border-error-500/50 bg-error-500/5' : 'bg-white/5 border-white/5'}`}>
+                  <Ionicons name="document-text-outline" size={18} color="#64748b" style={{ marginRight: 12 }} />
+                  <TextInput 
+                    value={notes} 
+                    onChangeText={text => { setNotes(text); setErrors(prev => ({...prev, notes: ''})); }} 
+                    placeholder="Notas adicionales (opcional)" 
+                    placeholderTextColor="#4b5563" 
+                    className="flex-1 text-white font-medium h-full" 
+                    style={{ fontFamily: 'Outfit_400Regular' }} 
+                  />
+                </View>
+                {errors.notes && <Typography variant="caption" className="text-error-500 mt-1 ml-1">{errors.notes}</Typography>}
               </View>
             </>
           )}
@@ -382,6 +460,7 @@ export default function NewTransactionScreen() {
             onClear={handleNumpadClear}
             onConfirm={handleSave}
             confirmColor={accentColor}
+            confirmLabel={isEditing ? "GUARDAR" : "CONFIRMAR"}
           />
         </View>
       </ScrollView>
@@ -407,6 +486,30 @@ export default function NewTransactionScreen() {
         onClose={() => setShowCreateCategoryModal(false)}
         onSubmit={handleCreateCategory}
         type={type === 'IN' ? 'IN' : 'EX'}
+      />
+
+      <ConfirmModal
+        isVisible={showDeleteConfirm}
+        title="Eliminar Transacción"
+        message="¿Estás seguro de que deseas eliminar este registro? Esta acción no se puede deshacer."
+        confirmText="Sí, eliminar"
+        isDestructive={true}
+        onCancel={() => setShowDeleteConfirm(false)}
+        onConfirm={async () => {
+          try {
+            await transactionService.deleteTransaction(id as string);
+            queryClient.invalidateQueries({ queryKey: ['accounts'] });
+            queryClient.invalidateQueries({ queryKey: ['recentTransactions'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboardSummary'] });
+            setShowDeleteConfirm(false);
+            showToast({ message: 'Transacción eliminada exitosamente', type: 'success' });
+            router.dismissAll();
+            router.replace('/(tabs)');
+          } catch (e) {
+            showToast({ message: 'Error eliminando la transacción', type: 'error' });
+            setShowDeleteConfirm(false);
+          }
+        }}
       />
     </SafeAreaView>
   );

@@ -217,7 +217,7 @@ export default function TransactionDetailScreen() {
 
         <TouchableOpacity 
           className="mt-8 mb-20 bg-white/5 border border-white/10 p-4 rounded-2xl flex-row items-center justify-center"
-          onPress={() => {/* TODO: Implement Edit */}}
+          onPress={() => router.push(`/transaction/new?id=${id}` as any)}
         >
           <Ionicons name="create-outline" size={20} color="#94a3b8" className="mr-2" />
           <Typography className="text-gray-400 ml-2" weight="bold">Editar transacción</Typography>

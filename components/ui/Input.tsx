@@ -20,6 +20,18 @@ export function Input({
 }: InputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [internalError, setInternalError] = useState(error);
+
+  React.useEffect(() => {
+    setInternalError(error);
+  }, [error]);
+
+  const handleChangeText = (text: string) => {
+    if (internalError) {
+      setInternalError(undefined);
+    }
+    props.onChangeText?.(text);
+  };
 
   // Determinar si es un campo de contraseña y aplicar reglas de usuario
   const isPassword = secureTextEntry || props.textContentType === 'password';
@@ -35,7 +47,7 @@ export function Input({
         </Typography>
       )}
       <View
-        className={`bg-white/5 border rounded-2xl h-14 px-4 flex-row items-center transition-colors ${error ? 'border-error-500/50' : isFocused ? 'border-brand-500 bg-brand-500/5' : 'border-white/10'
+        className={`bg-white/5 border rounded-2xl h-14 px-4 flex-row items-center transition-colors ${internalError ? 'border-error-500/50' : isFocused ? 'border-brand-500 bg-brand-500/5' : 'border-white/10'
           }`}
       >
         <TextInput
@@ -53,6 +65,7 @@ export function Input({
             onBlur?.(e);
           }}
           {...props}
+          onChangeText={handleChangeText}
         />
 
         {isPassword && (
@@ -68,9 +81,9 @@ export function Input({
           </TouchableOpacity>
         )}
       </View>
-      {error && (
+      {internalError && (
         <Typography variant="caption" className="text-error-500 mt-1 ml-1">
-          {error}
+          {internalError}
         </Typography>
       )}
     </View>

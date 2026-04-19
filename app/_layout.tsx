@@ -26,7 +26,8 @@ export const unstable_settings = {
 };
 
 import { AuthProvider } from '../contexts/AuthContext';
-
+import { ToastProvider } from '../contexts/ToastContext';
+import { ToastBox } from '../components/ui/ToastBox';
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     Outfit_400Regular,
@@ -58,17 +59,20 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <ThemeProvider value={CustomDarkTheme}>
-            <Stack screenOptions={{ 
-              headerShown: false,
-              contentStyle: { backgroundColor: '#07090e' }
-            }}>
-              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-            </Stack>
-            <StatusBar style="light" />
-          </ThemeProvider>
+          <ToastProvider>
+            <ThemeProvider value={CustomDarkTheme}>
+              <Stack screenOptions={{ 
+                headerShown: false,
+                contentStyle: { backgroundColor: '#07090e' }
+              }}>
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+              </Stack>
+              <StatusBar style="light" />
+            </ThemeProvider>
+            <ToastBox />
+          </ToastProvider>
         </AuthProvider>
       </QueryClientProvider>
     </SafeAreaProvider>

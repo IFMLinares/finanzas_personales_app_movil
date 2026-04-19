@@ -11,6 +11,7 @@ import { BackgroundAura } from '@/components/ui/BackgroundAura';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import { formatCurrency } from '@/utils/formatters';
 
 type CurrencyType = 'USD' | 'EUR' | 'USDT';
 
@@ -62,10 +63,7 @@ export default function DashboardScreen() {
     ]);
   };
 
-  const formatCurrency = (amount: number) => {
-    if (isNaN(amount)) return "0.00";
-    return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-  };
+
 
   if (loading && !refreshing) {
     return (
@@ -313,7 +311,7 @@ export default function DashboardScreen() {
                       weight="bold"
                       className={tx.display_type === 'income' ? 'text-emerald-500' : 'text-white'}
                     >
-                      {tx.display_type === 'income' ? '+' : '-'}${parseFloat(tx.amount?.toString() || "0").toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {tx.display_type === 'income' ? '+' : '-'}${formatCurrency(tx.amount)}
                     </Typography>
                   </View>
                 </TouchableOpacity>

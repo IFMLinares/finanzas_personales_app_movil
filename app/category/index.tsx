@@ -8,12 +8,16 @@ import { Typography } from '@/components/ui/Typography';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { BackgroundAura } from '@/components/ui/BackgroundAura';
 import { financeService, Category } from '@/services/financeService';
+import { useToast } from '@/contexts/ToastContext';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 export default function CategoryListScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'EX' | 'IN'>('EX');
   const [expandedParents, setExpandedParents] = useState<Set<number | string>>(new Set());
+  const [deleteConfirm, setDeleteConfirm] = useState<{ visible: boolean; id: string | number; name: string }>({ visible: false, id: '', name: '' });
 
   const { data: categories = [], isLoading, refetch } = useQuery({
     queryKey: ['categories'],
@@ -24,10 +28,12 @@ export default function CategoryListScreen() {
     mutationFn: (id: string | number) => financeService.deleteCategory(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
-      Alert.alert('Éxito', 'Categoría eliminada correctamente');
+      showToast({ message: 'Categoría eliminada correctamente', type: 'success' });
+      setDeleteConfirm({ visible: false, id: '', name: '' });
     },
     onError: (error: any) => {
-      Alert.alert('Error', 'No se pudo eliminar la categoría. Verifique que no tenga transacciones asociadas.');
+      showToast({ message: 'No se pudo eliminar la categoría. Verifique que no tenga transacciones asociadas.', type: 'error' });
+      setDeleteConfirm({ visible: false, id: '', name: '' });
     }
   });
 
@@ -42,14 +48,7 @@ export default function CategoryListScreen() {
   };
 
   const handleDelete = (id: string | number, name: string) => {
-    Alert.alert(
-      'Eliminar Categoría',
-      `¿Estás seguro de que deseas eliminar "${name}"? Esta acción no se puede deshacer.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Eliminar', style: 'destructive', onPress: () => deleteMutation.mutate(id) }
-      ]
-    );
+    setDeleteConfirm({ visible: true, id, name });
   };
 
   const renderCategoryItem = (item: Category, isChild: boolean = false) => {
@@ -173,6 +172,16 @@ export default function CategoryListScreen() {
       >
         <Ionicons name="add" size={32} color="white" />
       </TouchableOpacity>
+
+      <ConfirmModal
+        isVisible={deleteConfirm.visible}
+        title="Eliminar Categoría"
+        message={`¿Estás seguro de que deseas eliminar "${deleteConfirm.name}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        isDestructive={true}
+        onCancel={() => setDeleteConfirm({ visible: false, id: '', name: '' })}
+        onConfirm={() => deleteMutation.mutate(deleteConfirm.id)}
+      />
     </SafeAreaView>
   );
 }

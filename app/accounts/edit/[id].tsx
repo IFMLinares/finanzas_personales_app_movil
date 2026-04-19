@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { financeService, Account } from '@/services/financeService';
 import * as ImagePicker from 'expo-image-picker';
+import { useToast } from '@/contexts/ToastContext';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 export default function EditAccountScreen() {
   const router = useRouter();
@@ -21,6 +23,9 @@ export default function EditAccountScreen() {
   const [name, setName] = useState('');
   const [iconUrl, setIconUrl] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const { showToast } = useToast();
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
   useEffect(() => {
     if (id) fetchAccount();
@@ -44,7 +49,7 @@ export default function EditAccountScreen() {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permiso denegado', 'Necesitamos acceso a tu galería para subir un ícono.');
+      showToast({ message: 'Necesitamos acceso a tu galería para subir un ícono.', type: 'error' });
       return;
     }
 
@@ -60,13 +65,17 @@ export default function EditAccountScreen() {
     }
   };
 
-  const handleSave = async () => {
+  const initiateSave = () => {
     if (!name.trim()) {
-      Alert.alert('Error', 'El nombre de la cuenta es obligatorio.');
+      showToast({ message: 'El nombre de la cuenta es obligatorio.', type: 'error' });
       return;
     }
+    setShowSaveConfirm(true);
+  };
 
+  const handleSave = async () => {
     setSaving(true);
+    setShowSaveConfirm(false);
     try {
       const formData = new FormData();
       formData.append('name', name);
@@ -84,10 +93,11 @@ export default function EditAccountScreen() {
       }
 
       await financeService.updateAccount(id as string, formData);
+      showToast({ message: 'Cuenta actualizada correctamente', type: 'success' });
       router.back();
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'No se pudo actualizar la cuenta.');
+      showToast({ message: 'No se pudo actualizar la cuenta.', type: 'error' });
     } finally {
       setSaving(false);
     }
@@ -163,13 +173,22 @@ export default function EditAccountScreen() {
         </View>
 
         <Button 
-          title={saving ? "Guardando..." : "Guardar Cambios"} 
-          onPress={handleSave}
+          title="Guardar Cambios" 
+          onPress={initiateSave}
           disabled={saving}
         />
         
         <View className="h-20" />
       </ScrollView>
+
+      <ConfirmModal
+        isVisible={showSaveConfirm}
+        title="Guardar Cambios"
+        message="¿Estás seguro de que deseas guardar los cambios realizados en esta cuenta?"
+        confirmText={saving ? "Guardando..." : "Guardar"}
+        onCancel={() => setShowSaveConfirm(false)}
+        onConfirm={handleSave}
+      />
     </SafeAreaView>
   );
 }

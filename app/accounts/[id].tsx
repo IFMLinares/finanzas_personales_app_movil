@@ -8,6 +8,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/Button';
 import { financeService, Account } from '@/services/financeService';
 import { LinearGradient } from 'expo-linear-gradient';
+import { formatCurrency } from '@/utils/formatters';
 
 export default function AccountDetailScreen() {
   const router = useRouter();
@@ -30,10 +31,7 @@ export default function AccountDetailScreen() {
     }
   };
 
-  const formatCurrency = (amount: number | string) => {
-    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  };
+
 
   if (loading) {
     return (

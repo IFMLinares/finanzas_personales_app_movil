@@ -8,6 +8,7 @@ interface CustomNumpadProps {
   onClear?: () => void;
   onConfirm?: () => void;
   confirmColor?: string;
+  confirmLabel?: string;
 }
 
 export const CustomNumpad: React.FC<CustomNumpadProps> = ({ 
@@ -15,7 +16,8 @@ export const CustomNumpad: React.FC<CustomNumpadProps> = ({
   onDelete, 
   onClear, 
   onConfirm,
-  confirmColor = '#12b76a'
+  confirmColor = '#12b76a',
+  confirmLabel
 }) => {
   const numpadKeys = [
     ['1', '2', '3'],
@@ -96,7 +98,11 @@ export const CustomNumpad: React.FC<CustomNumpadProps> = ({
           className="flex-1 rounded-2xl justify-center items-center"
           style={{ backgroundColor: confirmColor }}
         >
-          <Ionicons name="checkmark-sharp" size={32} color="white" />
+          {confirmLabel ? (
+            <Text style={{ fontFamily: 'Outfit_700Bold', color: 'white', fontSize: 10, textAlign: 'center' }}>{confirmLabel}</Text>
+          ) : (
+            <Ionicons name="checkmark-sharp" size={32} color="white" />
+          )}
         </TouchableOpacity>
       </View>
     </View>

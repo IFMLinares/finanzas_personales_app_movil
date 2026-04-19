@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { Typography } from '@/components/ui/Typography';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { financeService, Account } from '@/services/financeService';
+import { formatCurrency } from '@/utils/formatters';
 import DraggableFlatList, {
   RenderItemParams,
   ScaleDecorator
@@ -39,10 +40,7 @@ export default function AccountsListScreen() {
     await financeService.reorderAccounts(ids);
   };
 
-  const formatCurrency = (amount: number | string) => {
-    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  };
+
 
   const renderItem = ({ item, drag, isActive }: RenderItemParams<Account>) => {
     return (

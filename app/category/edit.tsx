@@ -9,6 +9,8 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { BackgroundAura } from '@/components/ui/BackgroundAura';
 import { financeService, Category } from '@/services/financeService';
 import { Button } from '@/components/ui/Button';
+import { useToast } from '@/contexts/ToastContext';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 const ICON_OPTIONS = [
   'cart-outline', 'fast-food-outline', 'bus-outline', 'home-outline', 
@@ -29,6 +31,9 @@ export default function CategoryEditScreen() {
   const [type, setType] = useState<'EX' | 'IN'>((initialType as any) || 'EX');
   const [icon, setIcon] = useState('pricetag-outline');
   const [parent, setParent] = useState<number | string | null>(null);
+
+  const { showToast } = useToast();
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
@@ -57,19 +62,24 @@ export default function CategoryEditScreen() {
         : financeService.createCategory(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
-      Alert.alert('Éxito', `Categoría ${isEditing ? 'actualizada' : 'creada'} correctamente`);
+      showToast({ message: `Categoría ${isEditing ? 'actualizada' : 'creada'} correctamente`, type: 'success' });
       router.back();
     },
     onError: (error: any) => {
-      Alert.alert('Error', 'No se pudo guardar la categoría. Por favor, intente de nuevo.');
+      showToast({ message: 'No se pudo guardar la categoría. Por favor, intente de nuevo.', type: 'error' });
     }
   });
 
-  const handleSave = () => {
+  const initiateSave = () => {
     if (!name.trim()) {
-      Alert.alert('Error', 'El nombre es obligatorio');
+      showToast({ message: 'El nombre es obligatorio', type: 'error' });
       return;
     }
+    setShowSaveConfirm(true);
+  };
+
+  const handleSave = () => {
+    setShowSaveConfirm(false);
     mutation.mutate({
       name: name.trim(),
       type,
@@ -111,7 +121,7 @@ export default function CategoryEditScreen() {
           </Typography>
         </View>
         <TouchableOpacity 
-          onPress={handleSave}
+          onPress={initiateSave}
           disabled={mutation.isPending}
         >
           <Typography weight="bold" className="text-brand-500">Guardar</Typography>
@@ -200,10 +210,9 @@ export default function CategoryEditScreen() {
 
       <View className="px-6 py-4 border-t border-white/5 bg-gray-950">
         <Button 
-          label={isEditing ? 'Actualizar Categoría' : 'Crear Categoría'}
-          onPress={handleSave}
-          loading={mutation.isPending}
-          disabled={!name.trim()}
+          title={isEditing ? 'Actualizar Categoría' : 'Crear Categoría'}
+          onPress={initiateSave}
+          disabled={!name.trim() || mutation.isPending}
         />
       </View>
 
@@ -215,6 +224,15 @@ export default function CategoryEditScreen() {
           </GlassCard>
         </View>
       )}
+
+      <ConfirmModal
+        isVisible={showSaveConfirm}
+        title={isEditing ? "Guardar Categoría" : "Crear Categoría"}
+        message={`¿Estás seguro de que deseas ${isEditing ? 'guardar los cambios en' : 'crear'} esta categoría?`}
+        confirmText="Confirmar"
+        onCancel={() => setShowSaveConfirm(false)}
+        onConfirm={handleSave}
+      />
     </SafeAreaView>
   );
 }
