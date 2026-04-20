@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "296168980587",
+    "project_id": "finanzas-c2b72",
+    "storage_bucket": "finanzas-c2b72.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:296168980587:android:f7b75bdf46730877a1312e",
+        "android_client_info": {
+          "package_name": "com.ifmlinares.finanzas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtHd_MTfIBXSEhXFFQxqHgkrUfQuLKbTM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -6,6 +6,7 @@ import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
 import authService from '../services/authService';
 import { Typography } from '../components/ui/Typography';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 interface AuthContextType {
   user: any | null;
@@ -31,6 +32,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isVerifyingSession, setIsVerifyingSession] = useState(false);
   const segments = useSegments();
   const router = useRouter();
+  
+  // Hook de notificaciones: Se encarga de pedir permisos y registrar el token
+  // Solo se activa si el usuario está autenticado
+  const pushNotificationState = usePushNotifications();
 
   useEffect(() => {
     checkStorage();
