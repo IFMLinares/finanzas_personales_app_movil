@@ -66,6 +66,13 @@ export interface Account {
   display_icon?: string;
 }
 
+export interface Currency {
+  id: number;
+  code: string;
+  name: string;
+  symbol: string;
+}
+
 export interface Category {
   id: number | string;
   name: string;
@@ -179,6 +186,20 @@ class FinanceService {
       return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       console.error('Error fetching categories:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Obtiene la lista de monedas soportadas.
+   */
+  async getCurrencies(): Promise<Currency[]> {
+    try {
+      const response = await apiClient.get<any[]>(ENDPOINTS.FINANCE.CURRENCIES);
+      const data = Array.isArray(response.data) ? response.data : [];
+      return data;
+    } catch (error) {
+      console.error('Error fetching currencies:', error);
       return [];
     }
   }

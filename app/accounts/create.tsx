@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -9,7 +9,19 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { SelectModal } from '@/components/ui/SelectModal';
-import { financeService } from '@/services/financeService';
+import { financeService, Currency } from '@/services/financeService';
+import { useToast } from '@/contexts/ToastContext';
+
+// Helper to map currency codes to icons
+const getCurrencyIcon = (code: string) => {
+  switch (code.toUpperCase()) {
+    case 'USD': return 'logo-usd';
+    case 'EUR': return 'logo-euro';
+    case 'VES': return 'cash-outline';
+    case 'USDT': return 'swap-horizontal-outline';
+    default: return 'help-circle-outline';
+  }
+};
 
 export default function CreateAccountScreen() {
   const router = useRouter();
@@ -24,33 +36,36 @@ export default function CreateAccountScreen() {
   const { data: currencies = [], isLoading: loadingCurrencies } = useQuery({
     queryKey: ['currencies'],
     queryFn: async () => {
-      const response = await financeService.getDashboardSummary(); // Using summary to get symbols and keys or we could add a getCurrencies
-      // For now let's assume we have a few standard ones if the endpoint is not ready
-      return [
-        { id: 1, label: 'Bolívares', code: 'VES', icon: 'cash-outline', symbol: 'Bs' },
-        { id: 2, label: 'Dólares', code: 'USD', icon: 'logo-usd', symbol: '$' },
-        { id: 3, label: 'Euros', code: 'EUR', icon: 'logo-euro', symbol: '€' },
-        { id: 4, label: 'Tether (USDT)', code: 'USDT', icon: 'swap-horizontal-outline', symbol: 'USDT' },
-      ];
+      const data = await financeService.getCurrencies();
+      return data.map(curr => ({
+        id: curr.id,
+        label: curr.name,
+        code: curr.code,
+        icon: getCurrencyIcon(curr.code),
+        symbol: curr.symbol
+      }));
     }
   });
+
+  const { showToast } = useToast();
 
   const mutation = useMutation({
     mutationFn: (newAccount: any) => financeService.createAccount(newAccount),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardSummary'] });
+      showToast({ message: 'Cuenta creada con éxito', type: 'success' });
       router.back();
     },
     onError: (error: any) => {
-      Alert.alert('Error', 'No se pudo crear la cuenta. Verifica los datos.');
+      showToast({ message: 'No se pudo crear la cuenta. Verifica los datos.', type: 'error' });
       console.error(error);
     }
   });
 
   const handleCreate = () => {
     if (!name || !selectedCurrency) {
-      Alert.alert('Error', 'Por favor completa los campos obligatorios.');
+      showToast({ message: 'Por favor completa los campos obligatorios.', type: 'error' });
       return;
     }
 

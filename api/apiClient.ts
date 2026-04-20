@@ -11,6 +11,8 @@ const apiClient = axios.create({
   },
 });
 
+console.log('[API] Client initialized with baseURL:', process.env.EXPO_PUBLIC_API_URL);
+
 // Interceptor de peticiones para añadir el Access Token
 apiClient.interceptors.request.use(
   async (config) => {
@@ -81,9 +83,14 @@ apiClient.interceptors.response.use(
     // Si no hay respuesta del servidor (error.request existe pero error.response no)
     // o el mensaje es explícitamente "Network Error"
     if (!error.response || error.message === 'Network Error') {
+      const failedUrl = error.config?.url || 'unknown url';
+      const base = error.config?.baseURL || 'no baseURL';
+      
+      console.error(`[API] Connection Error! Target: ${base}${failedUrl}`);
+      
       // Usamos DeviceEventEmitter de React Native para emitir eventos globales
       DeviceEventEmitter.emit('global-connection-error', {
-        message: 'No se pudo conectar con el servidor. Verifica tu internet.'
+        message: `Error de conexión: No se pudo contactar a ${base}.`
       });
     }
     return Promise.reject(error);

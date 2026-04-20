@@ -116,6 +116,9 @@ export default function LoginScreen() {
           </GlassCard>
 
           <View className="flex-1 justify-end items-center mt-12">
+            <Typography variant="label" className="text-white/20 text-[10px] mb-2">
+              API: {process.env.EXPO_PUBLIC_API_URL || 'UNDEFINED'}
+            </Typography>
             <Typography variant="label" className="text-white/40">
               © 2026 Ecosistema Finanzas Premium
             </Typography>
