@@ -176,10 +176,10 @@ export default function CategoryListScreen() {
       <ConfirmModal
         isVisible={deleteConfirm.visible}
         title="Eliminar Categoría"
-        message={`¿Estás seguro de que deseas eliminar "${deleteConfirm.name}"? Esta acción no se puede deshacer.`}
+        description={`¿Estás seguro de que deseas eliminar "${deleteConfirm.name}"? Esta acción no se puede deshacer.`}
         confirmText="Eliminar"
-        isDestructive={true}
-        onCancel={() => setDeleteConfirm({ visible: false, id: '', name: '' })}
+        type="danger"
+        onClose={() => setDeleteConfirm({ visible: false, id: '', name: '' })}
         onConfirm={() => deleteMutation.mutate(deleteConfirm.id)}
       />
     </SafeAreaView>

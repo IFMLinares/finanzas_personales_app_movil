@@ -8,7 +8,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/Button';
 import { financeService, Account } from '@/services/financeService';
 import { LinearGradient } from 'expo-linear-gradient';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatCurrencyWithSymbol } from '@/utils/formatters';
 
 export default function AccountDetailScreen() {
   const router = useRouter();
@@ -84,7 +84,7 @@ export default function AccountDetailScreen() {
             
             <Typography variant="caption" className="text-ink-tertiary mb-2 uppercase tracking-widest">{account.name}</Typography>
             <Typography variant="balance" weight="bold" className="text-white mb-2">
-              {account.currency_detail?.symbol}{formatCurrency(account.balance)}
+              {formatCurrencyWithSymbol(account.balance, account.currency_detail?.symbol)}
             </Typography>
             <Typography variant="label" weight="bold" className="text-brand-400">
               {account.currency_detail?.name}

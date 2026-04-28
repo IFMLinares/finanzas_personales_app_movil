@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import { Typography } from '@/components/ui/Typography';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { financeService, Account } from '@/services/financeService';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatCurrencyWithSymbol } from '@/utils/formatters';
 import DraggableFlatList, {
   RenderItemParams,
   ScaleDecorator
@@ -98,7 +98,7 @@ export default function AccountsListScreen() {
 
             <View className="items-end">
               <Typography weight="bold" className="text-white">
-                {item.currency_detail?.symbol}{formatCurrency(item.balance)}
+                {formatCurrencyWithSymbol(item.balance, item.currency_detail?.symbol)}
               </Typography>
             </View>
 

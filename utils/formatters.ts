@@ -16,6 +16,31 @@ export const formatCurrency = (amount: number | string | undefined | null, decim
   // El locale 'de-DE' (Alemán) usa punto para miles y coma para decimales naturalmente.
   return parsedAmount.toLocaleString('de-DE', {
     minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
   });
+};
+
+/**
+ * Devuelve el símbolo de moneda apropiado según el código o símbolo técnico.
+ * @param codeOrSymbol El código ISO (USD, VES) o el símbolo guardado.
+ */
+export const getCurrencySymbol = (codeOrSymbol: string | undefined | null): string => {
+  if (!codeOrSymbol) return '$';
+  const clean = codeOrSymbol.toUpperCase().trim();
+  // Soportar variantes de Bolívares
+  if (clean === 'VES' || clean === 'BS' || clean === 'BS.' || clean === 'BS.S' || clean === 'VES.' || clean === 'BOLIVARES') return 'BS';
+  if (clean === 'EUR') return '€';
+  if (clean === 'USDT') return 'USDT';
+  return '$';
+};
+
+/**
+ * Formatea un monto con su símbolo de moneda correspondiente.
+ */
+export const formatCurrencyWithSymbol = (amount: number | string | undefined | null, codeOrSymbol: string | undefined | null, decimals: number = 2): string => {
+  const symbol = getCurrencySymbol(codeOrSymbol);
+  const formatted = formatCurrency(amount, decimals);
+  
+  // Para Bolívares, solemos poner el símbolo al final o al principio según preferencia, 
+  // pero mantendremos consistencia: Símbolo Espacio Monto
+  return `${symbol} ${formatted}`;
 };

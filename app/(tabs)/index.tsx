@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Typography } from '@/components/ui/Typography';
 import { financeService, Transaction, DashboardResponse } from '@/services/financeService';
+import { automationService } from '@/services/automationService';
 import { useAuth } from '@/contexts/AuthContext';
 import { FAB } from '@/components/ui/FAB';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -11,7 +12,8 @@ import { BackgroundAura } from '@/components/ui/BackgroundAura';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatCurrencyWithSymbol, getCurrencySymbol } from '@/utils/formatters';
+import { FixedExpenseWidget } from '@/components/ui/FixedExpenseWidget';
 
 type CurrencyType = 'USD' | 'EUR' | 'USDT';
 
@@ -52,7 +54,17 @@ export default function DashboardScreen() {
     queryFn: () => financeService.getAccounts(),
   });
 
-  const loading = loadingSummary || loadingTransactions || loadingAccounts;
+  const { data: templates = [], isLoading: loadingTemplates, refetch: refetchTemplates } = useQuery({
+    queryKey: ['expenseTemplates'],
+    queryFn: () => automationService.getTemplates(),
+  });
+
+  const { data: categories = [], isLoading: loadingCategories, refetch: refetchCategories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => financeService.getCategories(),
+  });
+
+  const loading = loadingSummary || loadingTransactions || loadingAccounts || loadingTemplates || loadingCategories;
   const refreshing = false; // Manejado por refetch
 
   const onRefresh = async () => {
@@ -60,10 +72,10 @@ export default function DashboardScreen() {
       refetchSummary(),
       refetchTransactions(),
       refetchAccounts(),
+      refetchTemplates(),
+      refetchCategories(),
     ]);
   };
-
-
 
   if (loading && !refreshing) {
     return (
@@ -91,7 +103,6 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-950" edges={['top']}>
-      {/* Luces de ambiente (Auras) */}
       <BackgroundAura top={-100} left={-100} color={accentColor} size={500} opacity={0.12} />
       <BackgroundAura top="40%" right="-50%" color="#465fff" size={400} opacity={0.08} />
 
@@ -102,7 +113,6 @@ export default function DashboardScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#465fff" />
         }
       >
-
         {/* Header Section */}
         <View className="flex-row justify-between items-center mt-6 mb-10">
           <View>
@@ -110,44 +120,28 @@ export default function DashboardScreen() {
             <Typography variant="caption" className="text-ink-tertiary">Resumen de liquidez global</Typography>
           </View>
           <View className="flex-row gap-3">
-            <TouchableOpacity
-              onPress={() => router.push('/calculator')}
-              className="w-12 h-12 rounded-2xl bg-surface-elevated justify-center items-center border border-white/5"
-            >
+            <TouchableOpacity onPress={() => router.push('/calculator')} className="w-12 h-12 rounded-2xl bg-surface-elevated justify-center items-center border border-white/5">
               <Ionicons name="calculator-outline" size={22} color="white" />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Main Balance Card (The Living Vault) */}
-        <GlassCard
-          intensity="high"
-          className="mb-8 relative"
-          style={{ minHeight: 220 }}
-        >
+        {/* Main Balance Card */}
+        <GlassCard intensity="high" className="mb-8 relative" style={{ minHeight: 220 }}>
           <View className="p-6">
             <View className="flex-row justify-between items-center mb-8">
               <View className="flex-row items-center">
-                <View
-                  className="w-2 h-2 rounded-full mr-2"
-                  style={{ backgroundColor: accentColor }}
-                />
+                <View className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: accentColor }} />
                 <Typography variant="label" weight="bold" className="text-white/80">Saldo Total</Typography>
               </View>
 
               <View className="flex-row items-center gap-2">
-                <TouchableOpacity
-                  onPress={() => setShowCurrencyMenu(!showCurrencyMenu)}
-                  className="bg-white/5 px-3 py-1.5 rounded-xl flex-row items-center border border-white/5"
-                >
+                <TouchableOpacity onPress={() => setShowCurrencyMenu(!showCurrencyMenu)} className="bg-white/5 px-3 py-1.5 rounded-xl flex-row items-center border border-white/5">
                   <Typography variant="label" weight="bold" className="text-white mr-1.5">{selectedCurrency}</Typography>
                   <Ionicons name="chevron-down" size={12} color="white" className="opacity-60" />
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={() => setShowBalance(!showBalance)}
-                  className="w-9 h-9 bg-white/5 rounded-xl justify-center items-center border border-white/5"
-                >
+                <TouchableOpacity onPress={() => setShowBalance(!showBalance)} className="w-9 h-9 bg-white/5 rounded-xl justify-center items-center border border-white/5">
                   <Ionicons name={showBalance ? "eye-outline" : "eye-off-outline"} size={16} color="white" />
                 </TouchableOpacity>
               </View>
@@ -173,70 +167,88 @@ export default function DashboardScreen() {
               <Typography variant="balance" weight="bold" className="text-white">
                 {showBalance ? `${currentSymbol}${formatCurrency(currentBalance)}` : '••••••'}
               </Typography>
-              <Typography variant="caption" weight="bold" className="ml-2 text-white/60">
-                {selectedCurrency}
-              </Typography>
+              <Typography variant="caption" weight="bold" className="ml-2 text-white/60">{selectedCurrency}</Typography>
             </View>
 
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center bg-white/10 px-4 py-2 rounded-xl border border-white/10">
                 <Ionicons name="trending-up" size={14} color="#14b8a6" />
-                <Typography variant="label" weight="bold" className="ml-2 text-white">
-                  BCV: {bcvRate.toFixed(2)} VES
-                </Typography>
+                <Typography variant="label" weight="bold" className="ml-2 text-white">BCV: {bcvRate.toFixed(2)} VES</Typography>
               </View>
 
               <View className="flex-row gap-4">
                 <View className="items-end">
                   <Typography variant="label" weight="bold" className="text-white/60 mb-1">MENSUAL</Typography>
-                  <Typography weight="bold" className="text-emerald-500 text-lg">
-                    +${formatCurrency(dashboardData?.monthly_stats?.income_usd || 0)}
-                  </Typography>
+                  <Typography weight="bold" className="text-emerald-500 text-lg">+{formatCurrencyWithSymbol(dashboardData?.monthly_stats?.income_usd || 0, 'USD')}</Typography>
                 </View>
               </View>
             </View>
           </View>
         </GlassCard>
 
+        {/* Quick Templates Section */}
+        {templates.length > 0 && (
+          <View className="mb-10">
+            <Typography variant="label" weight="bold" className="text-white/40 mb-4 uppercase tracking-widest">Acciones Rápidas</Typography>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+              {templates.map((template) => {
+                const category = categories.find(c => c.id === template.category);
+                return (
+                  <TouchableOpacity
+                    key={template.id}
+                    onPress={() => router.push({
+                      pathname: '/transaction/new',
+                      params: {
+                        template_id: template.id,
+                        amount: template.amount,
+                        category: template.category,
+                        account: template.preferred_account,
+                        title: template.name
+                      }
+                    })}
+                    className="mr-3"
+                  >
+                    <GlassCard className="flex-row items-center px-4 py-3 border border-white/5" intensity="low">
+                      <View className="w-8 h-8 rounded-lg bg-brand-500/10 items-center justify-center mr-3">
+                        <Ionicons name={(category?.icon || 'flash') as any} size={16} color="#465fff" />
+                      </View>
+                      <View>
+                        <Typography weight="bold" className="text-white text-xs">{template.name}</Typography>
+                        <Typography variant="caption" weight="bold" className="text-white/60 text-[10px]">
+                          {getCurrencySymbol(template.currency_detail?.code)} {formatCurrency(template.amount)}
+                        </Typography>
+                      </View>
+                    </GlassCard>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Widget de Gastos Fijos del día */}
+        <FixedExpenseWidget />
 
         {/* Mis Cuentas Section */}
         <View className="mb-10">
           <View className="flex-row justify-between items-end mb-6">
-            <View>
-              <Typography variant="h3" weight="bold">Cuentas</Typography>
-            </View>
-            <TouchableOpacity
-              onPress={() => router.push('/accounts')}
-              className="bg-brand-500/10 px-4 py-2 rounded-xl border border-brand-500/20"
-            >
+            <View><Typography variant="h3" weight="bold">Cuentas</Typography></View>
+            <TouchableOpacity onPress={() => router.push('/accounts')} className="bg-brand-500/10 px-4 py-2 rounded-xl border border-brand-500/20">
               <Typography className="text-brand-500" variant="caption" weight="bold">Ver todas</Typography>
             </TouchableOpacity>
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            className="flex-row"
-            contentContainerStyle={{ gap: 16 }}
-          >
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row" contentContainerStyle={{ gap: 16 }}>
             {accounts.length > 0 ? (
               accounts.map((acc) => (
-                <GlassCard
-                  key={acc.id}
-                  className="w-64 p-5 relative overflow-hidden"
-                  intensity="medium"
-                >
+                <GlassCard key={acc.id} className="w-64 p-5 relative overflow-hidden" intensity="medium">
                   <View className="flex-row items-center justify-between mb-6">
                     <View className="w-12 h-12 rounded-2xl bg-white/5 justify-center items-center border border-white/5 overflow-hidden">
                       {acc.display_icon ? (
                         <Image source={{ uri: acc.display_icon }} className="w-full h-full" resizeMode="cover" />
                       ) : (
                         <View className="w-full h-full items-center justify-center bg-white/5">
-                          <Typography className="text-2xl">
-                            {acc.currency_detail?.code === 'VES' ? '🇻🇪' :
-                              acc.currency_detail?.code === 'EUR' ? '🇪🇺' :
-                                acc.currency_detail?.code === 'USDT' ? '🌐' : '🇺🇸'}
-                          </Typography>
+                          <Typography className="text-2xl">{acc.currency_detail?.code === 'VES' ? '🇻🇪' : acc.currency_detail?.code === 'EUR' ? '🇪🇺' : acc.currency_detail?.code === 'USDT' ? '🌐' : '🇺🇸'}</Typography>
                         </View>
                       )}
                     </View>
@@ -247,25 +259,17 @@ export default function DashboardScreen() {
 
                   <View className="mb-6">
                     <Typography variant="caption" className="text-ink-tertiary mb-1">{acc.name}</Typography>
-                    <Typography variant="h3" weight="bold" numberOfLines={1}>
-                      {acc.currency_detail?.symbol} {formatCurrency(typeof acc.balance === 'string' ? parseFloat(acc.balance) : acc.balance)}
-                    </Typography>
+                    <Typography variant="h3" weight="bold" numberOfLines={1}>{acc.currency_detail?.symbol} {formatCurrency(typeof acc.balance === 'string' ? parseFloat(acc.balance) : acc.balance)}</Typography>
                   </View>
 
-                  <TouchableOpacity
-                    onPress={() => router.push(`/accounts/${acc.id}`)}
-                    className="flex-row items-center self-start"
-                  >
+                  <TouchableOpacity onPress={() => router.push(`/accounts/${acc.id}`)} className="flex-row items-center self-start">
                     <Typography variant="label" className="text-ink-tertiary mr-1" weight="semibold">Ver detalles</Typography>
                     <Ionicons name="arrow-forward" size={12} color="#64748b" />
                   </TouchableOpacity>
                 </GlassCard>
               ))
             ) : (
-              <TouchableOpacity
-                onPress={() => router.push('/accounts/create')}
-                className="w-64 h-40 bg-white/5 rounded-3xl border border-dashed border-white/10 justify-center items-center"
-              >
+              <TouchableOpacity onPress={() => router.push('/accounts/create')} className="w-64 h-40 bg-white/5 rounded-3xl border border-dashed border-white/10 justify-center items-center">
                 <Ionicons name="add-circle-outline" size={32} color="#465fff" className="mb-2" />
                 <Typography variant="caption" className="text-ink-tertiary">Vincular cuenta</Typography>
               </TouchableOpacity>
@@ -288,18 +292,10 @@ export default function DashboardScreen() {
           <View className="p-4">
             {transactions.length > 0 ? (
               transactions.map((tx, index) => (
-                <TouchableOpacity
-                  key={tx.id}
-                  onPress={() => router.push(`/transaction/${tx.id}` as any)}
-                  className={`flex-row items-center py-4 ${index !== transactions.length - 1 ? 'border-b border-white/5' : ''}`}
-                >
+                <TouchableOpacity key={tx.id} onPress={() => router.push(`/transaction/${tx.id}` as any)} className={`flex-row items-center py-4 ${index !== transactions.length - 1 ? 'border-b border-white/5' : ''}`}>
                   <View className="flex-row items-center flex-1">
                     <View className="w-12 h-12 bg-white/5 rounded-2xl justify-center items-center border border-white/5">
-                      <Ionicons
-                        name={(tx.display_icon || 'cash-outline') as any}
-                        size={20}
-                        color={tx.display_type === 'income' ? '#10b981' : '#f43f5e'}
-                      />
+                      <Ionicons name={(tx.display_icon || 'cash-outline') as any} size={20} color={tx.display_type === 'income' ? '#10b981' : '#f43f5e'} />
                     </View>
                     <View className="flex-1 ml-4 mr-3">
                       <Typography weight="bold" numberOfLines={1} className="text-white mb-0.5">{tx.display_title || 'Sin descripción'}</Typography>
@@ -307,19 +303,16 @@ export default function DashboardScreen() {
                     </View>
                   </View>
                   <View className="items-end">
-                    <Typography
-                      weight="bold"
-                      className={tx.display_type === 'income' ? 'text-emerald-500' : 'text-white'}
-                    >
-                      {tx.display_type === 'income' ? '+' : '-'}${formatCurrency(tx.amount)}
+                    <Typography weight="bold" className={tx.display_type === 'income' ? 'text-emerald-500' : 'text-white'}>
+                      {tx.display_type === 'income' ? '+' : '-'}
+                      {getCurrencySymbol(tx.account_detail?.currency_detail?.code)}
+                      {formatCurrency(tx.amount)}
                     </Typography>
                   </View>
                 </TouchableOpacity>
               ))
             ) : (
-              <View className="py-12 items-center">
-                <Typography className="text-ink-muted">Sin movimientos registrados</Typography>
-              </View>
+              <View className="py-12 items-center"><Typography className="text-ink-muted">Sin movimientos registrados</Typography></View>
             )}
           </View>
         </GlassCard>
@@ -329,33 +322,22 @@ export default function DashboardScreen() {
 
       {showFabMenu && (
         <View className="absolute bottom-24 right-8 w-48 bg-gray-900 rounded-3xl border border-gray-700 shadow-2xl overflow-hidden z-50">
-          <TouchableOpacity
-            onPress={() => { router.push('/transaction/new'); setShowFabMenu(false); }}
-            className="flex-row items-center p-4 border-b border-gray-800"
-          >
-            <View className="w-8 h-8 bg-success-500/10 rounded-lg justify-center items-center mr-3">
-              <Ionicons name="add-circle-outline" size={18} color="#12b76a" />
-            </View>
+          <TouchableOpacity onPress={() => { router.push('/transaction/new'); setShowFabMenu(false); }} className="flex-row items-center p-4 border-b border-gray-800">
+            <View className="w-8 h-8 bg-success-500/10 rounded-lg justify-center items-center mr-3"><Ionicons name="add-circle-outline" size={18} color="#12b76a" /></View>
             <Typography weight="semibold" className="text-gray-200">Movimiento</Typography>
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => { router.push('/transaction/new?type=TR'); setShowFabMenu(false); }}
-            className="flex-row items-center p-4"
-          >
-            <View className="w-8 h-8 bg-brand-500/10 rounded-lg justify-center items-center mr-3">
-              <Ionicons name="repeat-outline" size={18} color="#465fff" />
-            </View>
+          <TouchableOpacity onPress={() => { router.push('/transaction/new?type=TR'); setShowFabMenu(false); }} className="flex-row items-center p-4 border-b border-gray-800">
+            <View className="w-8 h-8 bg-brand-500/10 rounded-lg justify-center items-center mr-3"><Ionicons name="repeat-outline" size={18} color="#465fff" /></View>
             <Typography weight="semibold" className="text-gray-200">Transferencia</Typography>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { router.push('/fixed-expenses' as any); setShowFabMenu(false); }} className="flex-row items-center p-4">
+            <View className="w-8 h-8 bg-purple-500/10 rounded-lg justify-center items-center mr-3"><Ionicons name="calendar-outline" size={18} color="#8b5cf6" /></View>
+            <Typography weight="semibold" className="text-gray-200">Planes de Gasto</Typography>
           </TouchableOpacity>
         </View>
       )}
 
-      <FAB
-        onPress={() => setShowFabMenu(!showFabMenu)}
-        backgroundColor="#14b8a6"
-        iconColor="#000"
-        iconName={showFabMenu ? "close" : "add"}
-      />
+      <FAB onPress={() => setShowFabMenu(!showFabMenu)} backgroundColor="#14b8a6" iconColor="#000" iconName={showFabMenu ? "close" : "add"} />
     </SafeAreaView>
   );
 }

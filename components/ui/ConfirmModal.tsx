@@ -1,90 +1,127 @@
 import React from 'react';
-import { Modal, View, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { Typography } from './Typography';
+import { View, TouchableOpacity, ActivityIndicator, Modal, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Typography } from './Typography';
+import { BlurView } from 'expo-blur';
 
 interface ConfirmModalProps {
-  isVisible: boolean;
-  title: string;
-  message: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-  confirmText?: string;
-  cancelText?: string;
-  isDestructive?: boolean;
-  isLoading?: boolean;
+    isVisible: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+    title: string;
+    description: string;
+    confirmText?: string;
+    cancelText?: string;
+    loading?: boolean;
+    type?: 'danger' | 'warning' | 'info';
 }
 
 export function ConfirmModal({
-  isVisible,
-  title,
-  message,
-  onConfirm,
-  onCancel,
-  confirmText = 'Confirmar',
-  cancelText = 'Cancelar',
-  isDestructive = false,
-  isLoading = false,
+    isVisible,
+    onClose,
+    onConfirm,
+    title,
+    description,
+    confirmText = 'Confirmar',
+    cancelText = 'Cancelar',
+    loading = false,
+    type = 'danger'
 }: ConfirmModalProps) {
-  if (!isVisible) return null;
+    
+    const getColor = () => {
+        switch (type) {
+            case 'danger': return '#f43f5e';
+            case 'warning': return '#f59e0b';
+            case 'info': return '#3b82f6';
+            default: return '#8b5cf6';
+        }
+    };
 
-  return (
-    <Modal
-      visible={isVisible}
-      transparent
-      animationType="fade"
-      onRequestClose={onCancel}
-    >
-      <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill}>
-        <View className="flex-1 justify-center items-center px-4 bg-black/60">
-          <View className="w-full max-w-sm bg-[#121622] rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
-            <View className="p-6 items-center">
-              <View className={`w-14 h-14 rounded-full justify-center items-center mb-4 ${isDestructive ? 'bg-error-500/10' : 'bg-brand-500/10'}`}>
-                <Ionicons 
-                  name={isDestructive ? 'warning-outline' : 'help-circle-outline'} 
-                  size={28} 
-                  color={isDestructive ? '#f04438' : '#465fff'} 
+    const getIcon = () => {
+        switch (type) {
+            case 'danger': return 'trash-outline';
+            case 'warning': return 'alert-circle-outline';
+            case 'info': return 'information-circle-outline';
+            default: return 'checkmark-circle-outline';
+        }
+    };
+
+    const color = getColor();
+    const iconName = getIcon();
+
+    return (
+        <Modal
+            visible={isVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={onClose}
+        >
+            <Pressable 
+                className="flex-1 justify-center items-center px-6"
+                onPress={onClose}
+            >
+                {/* Backdrop con Blur */}
+                <BlurView 
+                    intensity={20} 
+                    tint="dark" 
+                    style={StyleSheet.absoluteFill} 
                 />
-              </View>
-              
-              <Typography variant="h3" weight="bold" className="text-white text-center mb-2">
-                {title}
-              </Typography>
-              
-              <Typography variant="body" className="text-gray-400 text-center mb-6">
-                {message}
-              </Typography>
+                <View className="absolute inset-0 bg-black/60" />
 
-              <View className="flex-row gap-3 w-full">
-                <TouchableOpacity
-                  onPress={onCancel}
-                  disabled={isLoading}
-                  className="flex-1 h-12 bg-white/5 rounded-xl justify-center items-center border border-white/5"
+                {/* Card del Modal */}
+                <Pressable 
+                    className="w-full bg-slate-900 border border-white/10 rounded-[32px] overflow-hidden shadow-2xl"
+                    onPress={(e) => e.stopPropagation()}
                 >
-                  <Typography variant="button" weight="semibold" className="text-gray-300">
-                    {cancelText}
-                  </Typography>
-                </TouchableOpacity>
+                    <View className="p-8 items-center">
+                        <View 
+                            style={{ backgroundColor: `${color}15` }}
+                            className="w-20 h-20 rounded-full items-center justify-center mb-6"
+                        >
+                            <Ionicons 
+                                name={iconName as any} 
+                                size={40} 
+                                color={color} 
+                            />
+                        </View>
 
-                <TouchableOpacity
-                  onPress={onConfirm}
-                  disabled={isLoading}
-                  className={`flex-1 h-12 rounded-xl justify-center items-center ${isDestructive ? 'bg-error-500' : 'bg-brand-500'}`}
-                >
-                  {isLoading ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Typography variant="button" weight="bold" className="text-white">
-                      {confirmText}
-                    </Typography>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </View>
-      </BlurView>
-    </Modal>
-  );
+                        <Typography variant="h3" weight="bold" className="text-white text-center mb-2">
+                            {title}
+                        </Typography>
+                        
+                        <Typography className="text-ink-tertiary text-center mb-8 px-4 leading-5">
+                            {description}
+                        </Typography>
+
+                        <View className="flex-row gap-3 w-full">
+                            <TouchableOpacity 
+                                onPress={onClose}
+                                disabled={loading}
+                                className="flex-1 bg-white/5 py-4 rounded-2xl items-center border border-white/5"
+                            >
+                                <Typography weight="semibold" className="text-white">
+                                    {cancelText}
+                                </Typography>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity 
+                                onPress={onConfirm}
+                                disabled={loading}
+                                style={{ backgroundColor: color }}
+                                className="flex-1 py-4 rounded-2xl items-center shadow-lg"
+                            >
+                                {loading ? (
+                                    <ActivityIndicator color="white" />
+                                ) : (
+                                    <Typography weight="bold" className="text-white">
+                                        {confirmText}
+                                    </Typography>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Pressable>
+            </Pressable>
+        </Modal>
+    );
 }

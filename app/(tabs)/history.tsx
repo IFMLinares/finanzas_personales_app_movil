@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl } from 'react-native';
+import { formatCurrency, formatCurrencyWithSymbol } from '@/utils/formatters';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -237,7 +238,7 @@ export default function HistoryScreen() {
                     <View className="items-end">
                       <Typography weight="bold" style={{ color: iconConfig.color }}>
                         {tx.type === 'IN' ? '+' : tx.type === 'EX' ? '-' : ''}
-                        {tx.account_detail?.currency_detail?.symbol || '$'} {formatCurrency(parseFloat(tx.amount.toString()))}
+                        {formatCurrencyWithSymbol(tx.amount, tx.account_detail?.currency_detail?.symbol)}
                       </Typography>
                       <Typography variant="caption" className="text-gray-600">
                         {new Intl.DateTimeFormat('es-ES', {

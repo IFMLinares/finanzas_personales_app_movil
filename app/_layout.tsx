@@ -12,7 +12,7 @@ import * as Notifications from 'expo-notifications';
 import { systemService } from '../services/systemService';
 import * as Application from 'expo-application';
 import Constants from 'expo-constants';
-import { Platform } from 'react-native';
+import { Platform, KeyboardAvoidingView } from 'react-native';
 import { ForceUpdateScreen } from '../components/ForceUpdateScreen';
 import { useState } from 'react';
 
@@ -77,9 +77,9 @@ export default function RootLayout() {
       // Necesitamos la versión definida en app.json (expoConfig).
       const version = Constants.expoConfig?.version || '1.0.0';
       const platform = Platform.OS === 'ios' ? 'ios' : 'android';
-      
+
       const result = await systemService.checkAppVersion(platform, version);
-      
+
       if (result.must_update) {
         setStoreUrl(result.info?.url_descarga);
         setAppStatus('must_update');
@@ -117,7 +117,7 @@ export default function RootLayout() {
         <AuthProvider>
           <ToastProvider>
             <ThemeProvider value={CustomDarkTheme}>
-              <Stack screenOptions={{ 
+              <Stack screenOptions={{
                 headerShown: false,
                 contentStyle: { backgroundColor: '#07090e' }
               }}>

@@ -184,9 +184,10 @@ export default function EditAccountScreen() {
       <ConfirmModal
         isVisible={showSaveConfirm}
         title="Guardar Cambios"
-        message="¿Estás seguro de que deseas guardar los cambios realizados en esta cuenta?"
+        description="¿Estás seguro de que deseas guardar los cambios realizados en esta cuenta?"
         confirmText={saving ? "Guardando..." : "Guardar"}
-        onCancel={() => setShowSaveConfirm(false)}
+        type="info"
+        onClose={() => setShowSaveConfirm(false)}
         onConfirm={handleSave}
       />
     </SafeAreaView>

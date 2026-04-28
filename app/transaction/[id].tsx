@@ -3,7 +3,10 @@ import { View, ScrollView, TouchableOpacity, ActivityIndicator, Share, Alert } f
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { useToast } from '@/contexts/ToastContext';
+import { formatCurrency, formatCurrencyWithSymbol } from '@/utils/formatters';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
@@ -15,11 +18,29 @@ import { transactionService } from '@/services/transactionService';
 export default function TransactionDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const viewShotRef = useRef<any>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
 
   const { data: tx, isLoading } = useQuery({
     queryKey: ['transaction', id],
     queryFn: () => transactionService.getTransactionById(id as string),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => transactionService.deleteTransaction(id as string),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['recentTransactions'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardSummary'] });
+      showToast({ message: 'Transacción eliminada correctamente', type: 'success' });
+      router.back();
+    },
+    onError: () => {
+      showToast({ message: 'Error al eliminar la transacción', type: 'error' });
+    }
   });
 
   const getTransactionLabel = (type: string) => {
@@ -132,12 +153,9 @@ export default function TransactionDetailScreen() {
                 </Typography>
               )}
               
-              <View className="flex-row items-baseline mb-2">
-                <Typography className="text-gray-400 mr-2 text-xl" style={{ fontFamily: 'Outfit_400Regular' }}>
-                  {tx.account_detail?.currency_detail?.symbol || '$'}
-                </Typography>
+              <View className="flex-row items-center justify-center mb-2">
                 <Typography weight="bold" className="text-gray-900 text-5xl" style={{ fontFamily: 'monospace' }}>
-                  {formatCurrency(tx.amount)}
+                  {formatCurrencyWithSymbol(tx.amount, tx.account_detail?.currency_detail?.symbol)}
                 </Typography>
               </View>
               
@@ -215,14 +233,37 @@ export default function TransactionDetailScreen() {
           </View>
         </ViewShot>
 
-        <TouchableOpacity 
-          className="mt-8 mb-20 bg-white/5 border border-white/10 p-4 rounded-2xl flex-row items-center justify-center"
-          onPress={() => router.push(`/transaction/new?id=${id}` as any)}
-        >
-          <Ionicons name="create-outline" size={20} color="#94a3b8" className="mr-2" />
-          <Typography className="text-gray-400 ml-2" weight="bold">Editar transacción</Typography>
-        </TouchableOpacity>
+        <View className="flex-row gap-3 mt-8 mb-20">
+          <TouchableOpacity 
+            className="flex-1 bg-white/5 border border-white/10 p-4 rounded-2xl flex-row items-center justify-center"
+            onPress={() => router.push(`/transaction/new?id=${id}` as any)}
+          >
+            <Ionicons name="create-outline" size={20} color="#60a5fa" />
+            <Typography className="text-blue-400 ml-2" weight="bold">Editar</Typography>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            className="flex-1 bg-rose-500/10 border border-rose-500/20 p-4 rounded-2xl flex-row items-center justify-center"
+            onPress={() => setShowDeleteConfirm(true)}
+          >
+            <Ionicons name="trash-outline" size={20} color="#f43f5e" />
+            <Typography className="text-rose-500 ml-2" weight="bold">Eliminar</Typography>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
+
+      <ConfirmModal
+        isVisible={showDeleteConfirm}
+        title="Eliminar Movimiento"
+        description="¿Estás seguro de que deseas borrar este registro? Esta acción no se puede deshacer y afectará el saldo de tus cuentas."
+        confirmText="Sí, eliminar"
+        type="danger"
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={() => {
+          setShowDeleteConfirm(false);
+          deleteMutation.mutate();
+        }}
+      />
     </SafeAreaView>
   );
 }

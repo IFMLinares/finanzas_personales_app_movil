@@ -8,9 +8,23 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { BackgroundAura } from '@/components/ui/BackgroundAura';
 import { useAuth } from '@/contexts/AuthContext';
 
+import { Switch, Alert } from 'react-native';
+
 export default function SettingsScreen() {
   const router = useRouter();
-  const { signOut } = useAuth();
+  const { signOut, isBiometricEnabled, enableBiometrics, disableBiometrics } = useAuth();
+
+  const handleBiometricToggle = async (value: boolean) => {
+    try {
+      if (value) {
+        await enableBiometrics();
+      } else {
+        await disableBiometrics();
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
+    }
+  };
 
   const menuItems = [
     {
@@ -26,6 +40,34 @@ export default function SettingsScreen() {
       icon: 'wallet-outline',
       color: '#10b981',
       onPress: () => router.push('/accounts'),
+    },
+    {
+      title: 'Deudas',
+      subtitle: 'Seguimiento de cuotas y acreedores',
+      icon: 'calendar-outline',
+      color: '#f43f5e',
+      onPress: () => router.push('/debts'),
+    },
+    {
+      title: 'Presupuestos',
+      subtitle: 'Control de gastos por categoría',
+      icon: 'bar-chart-outline',
+      color: '#8b5cf6',
+      onPress: () => router.push('/budgets'),
+    },
+    {
+      title: 'Plantillas Rápidas',
+      subtitle: 'Configura tus botones del dashboard',
+      icon: 'flash-outline',
+      color: '#fbbf24',
+      onPress: () => router.push('/automation/templates'),
+    },
+    {
+      title: 'Planes de Gasto',
+      subtitle: 'Automatización de gastos fijos',
+      icon: 'calendar-outline',
+      color: '#8b5cf6',
+      onPress: () => router.push('/fixed-expenses' as any),
     },
     {
       title: 'Calculadora',
@@ -53,7 +95,28 @@ export default function SettingsScreen() {
 
       <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
         <View className="mb-8">
-          <Typography variant="label" weight="bold" className="text-white/40 mb-4 uppercase tracking-widest">Gestión</Typography>
+          <Typography variant="label" weight="bold" className="text-white/40 mb-4 uppercase tracking-widest">Seguridad</Typography>
+          
+          <GlassCard className="flex-row items-center p-4 border border-white/5 mb-6" intensity="low">
+            <View className="w-12 h-12 rounded-2xl items-center justify-center mr-4 bg-purple-500/10">
+              <Ionicons name="finger-print" size={24} color="#a855f7" />
+            </View>
+            
+            <View className="flex-1">
+              <Typography weight="bold" className="text-white">Acceso Biométrico</Typography>
+              <Typography variant="caption" className="text-ink-tertiary">Usar huella para entrar</Typography>
+            </View>
+
+            <Switch 
+              value={isBiometricEnabled}
+              onValueChange={handleBiometricToggle}
+              trackColor={{ false: '#1e293b', true: '#465fff33' }}
+              thumbColor={isBiometricEnabled ? '#465fff' : '#475569'}
+              ios_backgroundColor="#1e293b"
+            />
+          </GlassCard>
+
+          <Typography variant="label" weight="bold" className="text-white/40 mb-4 uppercase tracking-widest">Módulos</Typography>
           
           {menuItems.map((item, index) => (
             <TouchableOpacity 

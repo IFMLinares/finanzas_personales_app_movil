@@ -11,9 +11,12 @@ import { usePushNotifications } from '../hooks/usePushNotifications';
 interface AuthContextType {
   user: any | null;
   isLoading: boolean;
+  isBiometricEnabled: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (userData: any) => Promise<void>;
   signOut: () => Promise<void>;
+  enableBiometrics: () => Promise<void>;
+  disableBiometrics: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isVerifyingSession, setIsVerifyingSession] = useState(false);
+  const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
   const segments = useSegments();
   const router = useRouter();
   
@@ -58,15 +62,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkStorage = async () => {
     try {
       const token = await SecureStore.getItemAsync('accessToken');
+      
+      // Cargar preferencia de biometría
+      const biometricPref = await SecureStore.getItemAsync('user_biometrics_enabled');
+      const bioEnabled = biometricPref === 'true';
+      setIsBiometricEnabled(bioEnabled);
+
       if (token) {
-        // En una app real, aquí haríamos una petición al backend para validar el token
-        // y obtener los datos frescos del usuario. Por ahora, simulamos que el usuario está logueado.
-        
-        // Verificación Geométrica/Biométrica
+        // Verificación Geométrica/Biométrica SOLO si el usuario lo activó
         const hasHardware = await LocalAuthentication.hasHardwareAsync();
         const isEnrolled = await LocalAuthentication.isEnrolledAsync();
 
-        if (hasHardware && isEnrolled) {
+        if (bioEnabled && hasHardware && isEnrolled) {
           const result = await LocalAuthentication.authenticateAsync({
             promptMessage: 'Autentícate para continuar a Finanzas',
             fallbackLabel: 'Usar PIN o Contraseña',
@@ -74,27 +81,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
 
           if (result.success) {
-            // Validación con el backend: Intentar obtener el perfil del usuario
-            // Esto confirma que el token es válido Y que hay conexión con el servidor.
-            setIsVerifyingSession(true);
-            try {
-              const userData = await authService.getMe();
-              setUser({ ...userData, authenticated: true });
-            } catch (error: any) {
-              // Si no hay respuesta (error de red) o el token es inválido
-              console.warn('Session validation failed:', error.message);
-              // Podríamos lanzar una notificación aquí si el Toast global aún no está activo
-              setUser(null);
-            } finally {
-              setIsVerifyingSession(false);
-            }
+            await verifySessionWithBackend();
           } else {
             // Si cancelan el prompt o falla, se redirige al login sin setear el usuario
             setUser(null);
           }
+        } else if (!bioEnabled) {
+          // Si NO está activa la biometría, validamos sesión directamente (o pedimos login)
+          // Para esta v2, si hay token pero no biometría, intentamos validar sesión directo para UX fluida
+          await verifySessionWithBackend();
         } else {
-          // Fallback: Si no posee biometría, pasamos directamente como estaba antes
-          setUser({ authenticated: true });
+          // Fallback: Si no posee biometría disponible pero estaba activa (raro)
+          await verifySessionWithBackend();
         }
       }
     } catch (e) {
@@ -104,11 +102,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const verifySessionWithBackend = async () => {
+    setIsVerifyingSession(true);
+    try {
+      const userData = await authService.getMe();
+      setUser({ ...userData, authenticated: true });
+    } catch (error: any) {
+      console.warn('Session validation failed:', error.message);
+      setUser(null);
+      await authService.logout(); // Limpiar tokens si falló la validación
+    } finally {
+      setIsVerifyingSession(false);
+    }
+  };
+
+  const enableBiometrics = async () => {
+    const hasHardware = await LocalAuthentication.hasHardwareAsync();
+    const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+    if (hasHardware && isEnrolled) {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Confirma tu identidad para activar el acceso biométrico',
+      });
+      if (result.success) {
+        await SecureStore.setItemAsync('user_biometrics_enabled', 'true');
+        setIsBiometricEnabled(true);
+      } else {
+        throw new Error('Autenticación fallida');
+      }
+    } else {
+      throw new Error('El dispositivo no soporta biometría o no tiene huellas registradas');
+    }
+  };
+
+  const disableBiometrics = async () => {
+    await SecureStore.setItemAsync('user_biometrics_enabled', 'false');
+    setIsBiometricEnabled(false);
+  };
+
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
       await authService.login(email, password);
-      setUser({ email }); // Guardamos algo en el estado para indicar que está logueado
+      // Tras login exitoso, obtenemos datos
+      const userData = await authService.getMe();
+      setUser({ ...userData, authenticated: true });
     } catch (error) {
       throw error;
     } finally {
@@ -120,7 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const response = await authService.register(userData);
-      setUser({ email: userData.email, ...(response.user || {}) });
+      setUser({ email: userData.email, ...(response.user || {}), authenticated: true });
     } catch (error) {
       throw error;
     } finally {
@@ -138,9 +176,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         isLoading,
+        isBiometricEnabled,
         signIn,
         signUp,
         signOut,
+        enableBiometrics,
+        disableBiometrics,
       }}
     >
       {children}

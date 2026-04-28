@@ -3,99 +3,35 @@ import { ENDPOINTS } from '../constants/Endpoints';
 import { Transaction, PaginatedResponse } from './financeService';
 
 class TransactionService {
-  /**
-   * Registra un nuevo movimiento (Ingreso o Gasto).
-   * @param data Payload con account, category, type, amount, date, notes
-   */
-  async createTransaction(data: any): Promise<Transaction | null> {
-    try {
-      const response = await apiClient.post<Transaction>(ENDPOINTS.TRANSACTIONS.BASE, data);
-      return response.data;
-    } catch (error) {
-      console.error('Error creating transaction:', error);
-      throw error;
-    }
+  async createTransaction(data: any): Promise<Transaction> {
+    const response = await apiClient.post<Transaction>(ENDPOINTS.TRANSACTIONS.BASE, data);
+    return response.data;
   }
 
-  /**
-   * Registra una transferencia entre cuentas.
-   * @param data Incluye destination_account, destination_amount, exchange_rate
-   */
-  async createTransfer(data: any): Promise<Transaction | null> {
-    try {
-      // En el backend, las transferencias usan el mismo endpoint POST /transactions/
-      // El serializador de Django maneja la lógica según el type='TR'
-      const payload = {
-        ...data,
-        type: 'TR'
-      };
-      const response = await apiClient.post<Transaction>(ENDPOINTS.TRANSACTIONS.BASE, payload);
-      return response.data;
-    } catch (error) {
-      console.error('Error creating transfer:', error);
-      throw error;
-    }
+  async createTransfer(data: any): Promise<Transaction> {
+    const payload = { ...data, type: 'TR' };
+    const response = await apiClient.post<Transaction>(ENDPOINTS.TRANSACTIONS.BASE, payload);
+    return response.data;
   }
 
-  /**
-   * Obtiene la lista de transacciones con filtros y paginación opcionales.
-   */
-  async getTransactions(params: { 
-    type?: string, 
-    account?: number | string, 
-    category?: number | string,
-    search?: string,
-    date_from?: string,
-    date_to?: string,
-    page?: number,
-    page_size?: number
-  } = {}): Promise<PaginatedResponse<Transaction>> {
-    try {
-      const response = await apiClient.get<PaginatedResponse<Transaction>>(ENDPOINTS.TRANSACTIONS.BASE, { params });
-      return response.data || { count: 0, next: null, previous: null, results: [] };
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-      return { count: 0, next: null, previous: null, results: [] };
-    }
+  async getTransactions(params: any = {}): Promise<PaginatedResponse<Transaction>> {
+    const response = await apiClient.get<PaginatedResponse<Transaction>>(ENDPOINTS.TRANSACTIONS.BASE, { params });
+    return response.data;
   }
 
-  /**
-   * Obtiene una transacción por su ID.
-   */
-  async getTransactionById(id: string | number): Promise<Transaction | null> {
-    try {
-      const response = await apiClient.get<Transaction>(`${ENDPOINTS.TRANSACTIONS.BASE}${id}/`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error fetching transaction ${id}:`, error);
-      return null;
-    }
+  async getTransactionById(id: string | number): Promise<Transaction> {
+    const response = await apiClient.get<Transaction>(`${ENDPOINTS.TRANSACTIONS.BASE}${id}/`);
+    return response.data;
   }
 
-  /**
-   * Actualiza una transacción existente.
-   */
-  async updateTransaction(id: string | number, data: any): Promise<Transaction | null> {
-    try {
-      const response = await apiClient.patch<Transaction>(`${ENDPOINTS.TRANSACTIONS.BASE}${id}/`, data);
-      return response.data;
-    } catch (error) {
-      console.error(`Error updating transaction ${id}:`, error);
-      throw error;
-    }
+  async updateTransaction(id: string | number, data: any): Promise<Transaction> {
+    const response = await apiClient.patch<Transaction>(`${ENDPOINTS.TRANSACTIONS.BASE}${id}/`, data);
+    return response.data;
   }
 
-  /**
-   * Elimina una transacción.
-   */
   async deleteTransaction(id: string | number): Promise<boolean> {
-    try {
-      await apiClient.delete(`${ENDPOINTS.TRANSACTIONS.BASE}${id}/`);
-      return true;
-    } catch (error) {
-      console.error(`Error deleting transaction ${id}:`, error);
-      throw error;
-    }
+    await apiClient.delete(`${ENDPOINTS.TRANSACTIONS.BASE}${id}/`);
+    return true;
   }
 }
 

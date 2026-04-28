@@ -228,9 +228,10 @@ export default function CategoryEditScreen() {
       <ConfirmModal
         isVisible={showSaveConfirm}
         title={isEditing ? "Guardar Categoría" : "Crear Categoría"}
-        message={`¿Estás seguro de que deseas ${isEditing ? 'guardar los cambios en' : 'crear'} esta categoría?`}
+        description={`¿Estás seguro de que deseas ${isEditing ? 'guardar los cambios en' : 'crear'} esta categoría?`}
         confirmText="Confirmar"
-        onCancel={() => setShowSaveConfirm(false)}
+        type="info"
+        onClose={() => setShowSaveConfirm(false)}
         onConfirm={handleSave}
       />
     </SafeAreaView>

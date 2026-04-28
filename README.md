@@ -46,7 +46,17 @@ Al terminar, la terminal mostrará un mensaje verde de `BUILD SUCCESSFUL`. Tu ar
 
 ---
 
-## 3. Resolución de Errores Frecuentes
+## 3. Ejecución en Desarrollo (VPN)
+
+Si necesitas ejecutar el servidor de desarrollo mientras estás conectado a una VPN, utiliza el siguiente comando para asegurar que el empaquetador de React Native utilice la dirección IP correcta de la VPN:
+
+```powershell
+$env:REACT_NATIVE_PACKAGER_HOSTNAME="100.95.37.127"; npm run dev
+```
+
+---
+
+## 4. Resolución de Errores Frecuentes
 
 ### ❌ Error: `ninja: error: Stat(...): Filename longer than 260 characters`
 **Por qué ocurre:** Windows mantiene por defecto una regla antigua que impide manejar rutas de archivos excesivamente largas. Durante la compilación de C++ (react-native-reanimated, screens), las carpetas anidadas superan fácilmente estos 260 caracteres, corrompiendo el build en un 87% de progreso.
@@ -77,7 +87,7 @@ git config --system core.longpaths true
 
 ---
 
-## 4. Notas adicionales para el Despliegue iOS
+## 5. Notas adicionales para el Despliegue iOS
 Dado que el proceso actual detalla exportaciones de `.apk` para sistema Android, si quisieras exportar un archivo `.ipa` en el futuro, requerirás una máquina física o virtual ejecutando macOS con Xcode instalado, y ejecutar:
 `npx expo prebuild -p ios` seguido de compilaciones con CocoaPods y Xcode.
 

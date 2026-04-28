@@ -19,79 +19,45 @@ export interface AuthUser {
 }
 
 const authService = {
-  /**
-   * Inicia sesión y almacena los tokens de forma segura.
-   */
   login: async (email: string, password: string): Promise<LoginResponse> => {
-    try {
-      const response = await apiClient.post<LoginResponse>(ENDPOINTS.AUTH.LOGIN, {
-        email: email,
-        password,
-      });
+    const response = await apiClient.post<LoginResponse>(ENDPOINTS.AUTH.LOGIN, {
+      email,
+      password,
+    });
 
-      if (response.data.access) {
-        await SecureStore.setItemAsync('accessToken', response.data.access);
-        await SecureStore.setItemAsync('refreshToken', response.data.refresh);
-      }
-
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        console.error('SERVER ERROR DATA:', error.response.data);
-        console.error('SERVER ERROR STATUS:', error.response.status);
-      } else {
-        console.error('NETWORK OR CONFIG ERROR:', error.message);
-      }
-      throw error;
+    if (response.data.access) {
+      await SecureStore.setItemAsync('accessToken', response.data.access);
+      await SecureStore.setItemAsync('refreshToken', response.data.refresh);
     }
+
+    return response.data;
   },
 
-  /**
-   * Registra un nuevo usuario e inicia sesión automáticamente con los tokens recibidos.
-   */
   register: async (userData: any): Promise<LoginResponse> => {
-    try {
-      const response = await apiClient.post<LoginResponse>(ENDPOINTS.AUTH.REGISTER, userData);
+    const response = await apiClient.post<LoginResponse>(ENDPOINTS.AUTH.REGISTER, userData);
 
-      if (response.data.access) {
-        await SecureStore.setItemAsync('accessToken', response.data.access);
-        await SecureStore.setItemAsync('refreshToken', response.data.refresh);
-      }
-
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        console.error('REGISTRATION ERROR DATA:', error.response.data);
-      }
-      throw error;
+    if (response.data.access) {
+      await SecureStore.setItemAsync('accessToken', response.data.access);
+      await SecureStore.setItemAsync('refreshToken', response.data.refresh);
     }
+
+    return response.data;
   },
 
-  /**
-   * Cierra sesión eliminando los tokens y notificando al backend.
-   */
   logout: async (): Promise<void> => {
     try {
       await apiClient.post(ENDPOINTS.AUTH.LOGOUT);
-    } catch (error) {
-      console.warn('Error notifying logout to backend', error);
+    } catch (e) {
+      // Ignorar error en logout
     } finally {
       await SecureStore.deleteItemAsync('accessToken');
       await SecureStore.deleteItemAsync('refreshToken');
     }
   },
 
-  /**
-   * Obtiene los datos del usuario actual desde el servidor.
-   * Sirve también como verificación de validez del token y conectividad.
-   */
   getMe: async (): Promise<any> => {
-    try {
-      const response = await apiClient.get(ENDPOINTS.AUTH.ME);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await apiClient.get(ENDPOINTS.AUTH.ME);
+    return response.data;
   },
 
   /**

@@ -166,7 +166,7 @@ export default function CreateTransactionScreen() {
   const secondaryAmount = inputCurrency === 'USD' 
     ? (numericAmount * bcvRate).toFixed(2) 
     : (numericAmount / bcvRate).toFixed(2);
-  const secondarySymbol = inputCurrency === 'USD' ? 'Bs.' : '$';
+  const secondarySymbol = inputCurrency === 'USD' ? 'BS' : '$';
 
   return (
     <SafeAreaView className="flex-1 bg-gray-950">
@@ -236,7 +236,7 @@ export default function CreateTransactionScreen() {
             color: colorBase 
           }}
         >
-          {inputCurrency === 'USD' ? '$' : 'Bs'} {amount}
+          {inputCurrency === 'USD' ? '$' : 'BS'} {amount}
         </Typography>
 
         <Typography variant={step === 'details' ? 'caption' : 'h3'} className="text-ink-muted mt-2" weight="semibold">

@@ -78,64 +78,68 @@ export function SelectModal({
 
             return (
               <View key={option.id} className={isChild ? "ml-6 mt-1" : "mt-2"}>
-                <TouchableOpacity 
-                  onPress={() => { 
-                    if (isParent && !isChild) {
-                      toggleExpand(option.id);
-                    } else {
-                      onSelect(option); 
-                      onClose(); 
-                    }
-                  }}
-                  activeOpacity={0.7}
-                  className={`flex-row items-center p-5 rounded-3xl border ${
+                <View 
+                  className={`flex-row items-center rounded-3xl border ${
                     isSelected 
                       ? 'bg-brand-500/10 border-brand-500' 
                       : 'bg-white/5 border-white/5'
                   }`}
                 >
-                  {option.icon && (
-                    <View 
-                      className="w-10 h-10 rounded-2xl justify-center items-center mr-4"
-                      style={{ backgroundColor: option.color ? `${option.color}20` : 'rgba(255,255,255,0.05)' }}
-                    >
-                      <Ionicons 
-                        name={option.icon as any} 
-                        size={20} 
-                        color={option.color || (isSelected ? '#465fff' : '#94a3b8')} 
-                      />
-                    </View>
-                  )}
-                  <View className="flex-1">
-                    <Typography 
-                      variant="body"
-                      weight={isSelected ? "bold" : "semibold"} 
-                      className={isSelected ? 'text-brand-500' : 'text-white'}
-                    >
-                      {option.label}
-                    </Typography>
-                    {option.sublabel && (
-                      <Typography variant="caption" className="text-ink-tertiary mt-0.5">
-                        {option.sublabel}
-                      </Typography>
+                  <TouchableOpacity 
+                    onPress={() => { 
+                      onSelect(option); 
+                      onClose(); 
+                    }}
+                    activeOpacity={0.7}
+                    className="flex-1 flex-row items-center p-5"
+                  >
+                    {option.icon && (
+                      <View 
+                        className="w-10 h-10 rounded-2xl justify-center items-center mr-4"
+                        style={{ backgroundColor: option.color ? `${option.color}20` : 'rgba(255,255,255,0.05)' }}
+                      >
+                        <Ionicons 
+                          name={option.icon as any} 
+                          size={20} 
+                          color={option.color || (isSelected ? '#465fff' : '#94a3b8')} 
+                        />
+                      </View>
                     )}
-                  </View>
+                    <View className="flex-1">
+                      <Typography 
+                        variant="body"
+                        weight={isSelected ? "bold" : "semibold"} 
+                        className={isSelected ? 'text-brand-500' : 'text-white'}
+                      >
+                        {option.label}
+                      </Typography>
+                      {option.sublabel && (
+                        <Typography variant="caption" className="text-ink-tertiary mt-0.5">
+                          {option.sublabel}
+                        </Typography>
+                      )}
+                    </View>
+
+                    {isSelected && (
+                      <View className="w-5 h-5 rounded-full bg-brand-500 justify-center items-center ml-2">
+                        <Ionicons name="checkmark" size={12} color="white" />
+                      </View>
+                    )}
+                  </TouchableOpacity>
                   
                   {isParent && !isChild && (
-                    <Ionicons 
-                      name={isExpanded ? "chevron-up" : "chevron-down"} 
-                      size={18} 
-                      color="#64748b" 
-                      className="ml-2"
-                    />
+                    <TouchableOpacity 
+                      onPress={() => toggleExpand(option.id)}
+                      className="pr-5 py-5 pl-2"
+                    >
+                      <Ionicons 
+                        name={isExpanded ? "chevron-up" : "chevron-down"} 
+                        size={18} 
+                        color="#64748b" 
+                      />
+                    </TouchableOpacity>
                   )}
-
-                  {isSelected && (
-                    <View className="w-5 h-5 rounded-full bg-brand-500 justify-center items-center ml-2">
-                      <Ionicons name="checkmark" size={12} color="white" />
-                    </View>
-                  )}
-                </TouchableOpacity>
+                </View>
               </View>
             );
           })}

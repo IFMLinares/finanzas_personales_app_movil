@@ -12,6 +12,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { financeService, DashboardResponse } from '@/services/financeService';
 import { transactionService } from '@/services/transactionService';
 import { useToast } from '@/contexts/ToastContext';
+import { getCurrencySymbol } from '@/utils/formatters';
 
 export default function NewTransactionScreen() {
   const router = useRouter();
@@ -99,7 +100,7 @@ export default function NewTransactionScreen() {
   useEffect(() => {
     if (isEditing && editingTx) {
       setType(editingTx.type);
-      setAmount(editingTx.amount.toString());
+      setAmount(parseFloat(editingTx.amount.toString()).toFixed(2));
       setTitle(editingTx.title || '');
       setNotes(editingTx.notes || '');
       
@@ -126,6 +127,33 @@ export default function NewTransactionScreen() {
       }
     }
   }, [isEditing, editingTx]);
+
+  // Efecto para pre-rellenar desde una plantilla (Acciones Rápidas)
+  const { amount: pAmount, category: pCategory, account: pAccount, title: pTitle, type: pType } = useLocalSearchParams();
+  
+  useEffect(() => {
+    if (!isEditing && (pAmount || pCategory || pAccount || pTitle)) {
+      if (pAmount) setAmount(parseFloat(pAmount.toString()).toFixed(2));
+      if (pTitle) setTitle(pTitle.toString());
+      if (pType) setType(pType as any);
+
+      if (pAccount && accounts.length > 0) {
+        const acc = accounts.find(a => a.id.toString() === pAccount.toString());
+        if (acc) setSelectedAccount(acc);
+      }
+
+      if (pCategory && categories.length > 0) {
+        const cat = categories.find(c => c.id.toString() === pCategory.toString());
+        if (cat) {
+          setSelectedCategory({
+            id: cat.id,
+            label: cat.name,
+            icon: cat.icon || 'bookmark-outline'
+          });
+        }
+      }
+    }
+  }, [pAmount, pCategory, pAccount, pTitle, pType, accounts, categories, isEditing]);
 
   // Lógica de tasas automáticas
   useEffect(() => {
@@ -299,7 +327,7 @@ export default function NewTransactionScreen() {
         <View className="items-center mb-8">
           <Typography variant="label" weight="bold" className={`mb-2 uppercase tracking-wide ${errors.amount ? 'text-error-500' : 'text-gray-500'}`}>Monto</Typography>
           <Typography variant="h1" weight="bold" style={{ color: errors.amount ? '#f04438' : accentColor, fontSize: 52, lineHeight: 56 }} className="tracking-tighter py-1">
-            {isIncome ? '+ ' : isExpense ? '- ' : ''}${amount}
+            {isIncome ? '+ ' : isExpense ? '- ' : ''}{getCurrencySymbol(selectedAccount?.currency_detail?.code)}{amount}
           </Typography>
           {errors.amount && <Typography variant="caption" className="text-error-500 mt-2">{errors.amount}</Typography>}
         </View>
@@ -336,7 +364,7 @@ export default function NewTransactionScreen() {
                   <TouchableOpacity onPress={() => { setShowAccountModal(true); setErrors(prev => ({...prev, account: ''})); }} className={`border p-3 rounded-2xl h-20 justify-center ${errors.account ? 'border-error-500/50 bg-error-500/5' : 'bg-white/5 border-white/5'}`}>
                     <Typography variant="caption" className="text-gray-500 font-bold uppercase text-[9px]">Desde</Typography>
                     <Typography className={selectedAccount ? 'text-white' : 'text-gray-400'} weight="semibold" numberOfLines={1}>{selectedAccount ? selectedAccount.name : 'Origen'}</Typography>
-                    {selectedAccount && <Typography className="text-blue-500 text-[10px] font-bold">{selectedAccount.currency_detail.symbol} {selectedAccount.balance}</Typography>}
+                    {selectedAccount && <Typography className="text-blue-500 text-[10px] font-bold">{getCurrencySymbol(selectedAccount.currency_detail.code)} {selectedAccount.balance}</Typography>}
                   </TouchableOpacity>
                   {errors.account && <Typography variant="caption" className="text-error-500 mt-1 ml-1">{errors.account}</Typography>}
                 </View>
@@ -349,7 +377,7 @@ export default function NewTransactionScreen() {
                   <TouchableOpacity onPress={() => { setShowDestinationAccountModal(true); setErrors(prev => ({...prev, destination_account: ''})); }} className={`border p-3 rounded-2xl h-20 justify-center ${errors.destination_account ? 'border-error-500/50 bg-error-500/5' : 'bg-white/5 border-white/5'}`}>
                     <Typography variant="caption" className="text-gray-500 font-bold uppercase text-[9px]">Hacia</Typography>
                     <Typography className={selectedDestinationAccount ? 'text-white' : 'text-gray-400'} weight="semibold" numberOfLines={1}>{selectedDestinationAccount ? selectedDestinationAccount.name : 'Destino'}</Typography>
-                    {selectedDestinationAccount && <Typography className="text-blue-500 text-[10px] font-bold">Llega: {selectedDestinationAccount.currency_detail.symbol} {destinationAmount}</Typography>}
+                    {selectedDestinationAccount && <Typography className="text-blue-500 text-[10px] font-bold">Llega: {getCurrencySymbol(selectedDestinationAccount.currency_detail.code)} {destinationAmount}</Typography>}
                   </TouchableOpacity>
                   {errors.destination_account && <Typography variant="caption" className="text-error-500 mt-1 ml-1">{errors.destination_account}</Typography>}
                 </View>
@@ -387,7 +415,7 @@ export default function NewTransactionScreen() {
                           placeholderTextColor="#4b5563" 
                           style={{ fontFamily: 'Outfit_600SemiBold', height: 24 }} 
                         />
-                        <Typography className="text-gray-400 text-xs ml-2">Bs</Typography>
+                        <Typography className="text-gray-400 text-xs ml-2">BS</Typography>
                       </View>
                     </View>
                     {rateSource === 'MANUAL' && (
@@ -465,8 +493,8 @@ export default function NewTransactionScreen() {
         </View>
       </ScrollView>
 
-      <SelectModal isVisible={showAccountModal} onClose={() => setShowAccountModal(false)} title="Seleccionar Cuenta" options={accounts.map(a => ({ id: a.id, label: a.name, sublabel: `${a.currency_detail.symbol} ${a.balance}`, icon: 'briefcase-outline' }))} selectedValue={selectedAccount?.id} onSelect={(opt) => setSelectedAccount(accounts.find(a => a.id === opt.id))} />
-      <SelectModal isVisible={showDestinationAccountModal} onClose={() => setShowDestinationAccountModal(false)} title="Hacia (Destino)" options={accounts.map(a => ({ id: a.id, label: a.name, sublabel: `${a.currency_detail.symbol} ${a.balance}`, icon: 'swap-horizontal-outline' }))} selectedValue={selectedDestinationAccount?.id} onSelect={(opt) => setSelectedDestinationAccount(accounts.find(a => a.id === opt.id))} />
+      <SelectModal isVisible={showAccountModal} onClose={() => setShowAccountModal(false)} title="Seleccionar Cuenta" options={accounts.map(a => ({ id: a.id, label: a.name, sublabel: `${getCurrencySymbol(a.currency_detail.code)} ${a.balance}`, icon: 'briefcase-outline' }))} selectedValue={selectedAccount?.id} onSelect={(opt) => setSelectedAccount(accounts.find(a => a.id === opt.id))} />
+      <SelectModal isVisible={showDestinationAccountModal} onClose={() => setShowDestinationAccountModal(false)} title="Hacia (Destino)" options={accounts.map(a => ({ id: a.id, label: a.name, sublabel: `${getCurrencySymbol(a.currency_detail.code)} ${a.balance}`, icon: 'swap-horizontal-outline' }))} selectedValue={selectedDestinationAccount?.id} onSelect={(opt) => setSelectedDestinationAccount(accounts.find(a => a.id === opt.id))} />
       <SelectModal 
         isVisible={showCategoryModal} 
         onClose={() => setShowCategoryModal(false)} 
@@ -491,10 +519,10 @@ export default function NewTransactionScreen() {
       <ConfirmModal
         isVisible={showDeleteConfirm}
         title="Eliminar Transacción"
-        message="¿Estás seguro de que deseas eliminar este registro? Esta acción no se puede deshacer."
+        description="¿Estás seguro de que deseas eliminar este registro? Esta acción no se puede deshacer."
         confirmText="Sí, eliminar"
-        isDestructive={true}
-        onCancel={() => setShowDeleteConfirm(false)}
+        type="danger"
+        onClose={() => setShowDeleteConfirm(false)}
         onConfirm={async () => {
           try {
             await transactionService.deleteTransaction(id as string);

@@ -18,6 +18,7 @@ export const ENDPOINTS = {
   },
   TRANSACTIONS: {
     BASE: '/transactions/',
+    PLANS: '/transactions/plans/',
   },
 };
 

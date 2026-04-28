@@ -1,23 +1,36 @@
 import { useState, useEffect, useRef } from 'react';
-import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { systemService } from '../services/systemService';
 
+// No importamos Notifications aquí arriba para evitar el error global en Expo Go SDK 53
+let Notifications: any = null;
+try {
+  if (Constants.appOwnership !== 'expo') {
+    Notifications = require('expo-notifications');
+  }
+} catch (e) {
+  console.log('Notificaciones no disponibles');
+}
+
 export interface PushNotificationState {
-  notification?: Notifications.Notification;
+  notification?: any;
   expoPushToken?: string;
   devicePushToken?: string;
 }
 
 export const usePushNotifications = () => {
   const [notificationState, setNotificationState] = useState<PushNotificationState>({});
-  const notificationListener = useRef<Notifications.Subscription>(undefined);
-  const responseListener = useRef<Notifications.Subscription>(undefined);
+  const notificationListener = useRef<any>(null);
+  const responseListener = useRef<any>(null);
 
   const registerForPushNotificationsAsync = async () => {
-    let token;
+    // Si estamos en Expo Go, ni siquiera intentamos nada para evitar errores fatales
+    if (Constants.appOwnership === 'expo' || !Notifications) {
+      console.warn('Modo Expo Go detectado: Saltando registro de notificaciones Push.');
+      return;
+    }
 
     if (!Device.isDevice) {
       console.log('Debes usar un dispositivo físico para las notificaciones Push');
@@ -37,29 +50,16 @@ export const usePushNotifications = () => {
       return;
     }
 
-    // EVITAR ERROR EN EXPO GO:
-    // Las notificaciones push nativas de Firebase (FCM) no funcionan en Expo Go estándar.
-    // Solo funcionan en Development Builds o Builds reales (EAS).
-    if (Constants.appOwnership === 'expo') {
-      console.warn('Ejecutando en Expo Go: Las notificaciones Push (FCM) están desactivadas. Usa una Build nativa para probarlas.');
-      return;
-    }
-
-    // Obtenemos el token nativo (FCM para Android)
-    // Esto es lo que enviamos a nuestro backend Django
     try {
       const deviceToken = (await Notifications.getDevicePushTokenAsync()).data;
       setNotificationState(prev => ({ ...prev, devicePushToken: deviceToken }));
       
-      // Registrar en nuestro backend
       await systemService.registerDeviceToken(
         deviceToken,
         Platform.OS as 'android' | 'ios'
       );
-      
-      console.log('Token de dispositivo registrado exitosamente');
     } catch (error) {
-      console.error('Error obteniendo el token de dispositivo:', error);
+      console.error('Error obteniendo el token:', error);
     }
 
     if (Platform.OS === 'android') {
@@ -70,28 +70,24 @@ export const usePushNotifications = () => {
         lightColor: '#FF231F7C',
       });
     }
-
-    return token;
   };
 
   useEffect(() => {
+    if (Constants.appOwnership === 'expo' || !Notifications) return;
+
     registerForPushNotificationsAsync();
 
-    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+    notificationListener.current = Notifications.addNotificationReceivedListener((notification: any) => {
       setNotificationState(prev => ({ ...prev, notification }));
     });
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+    responseListener.current = Notifications.addNotificationResponseReceivedListener((response: any) => {
       console.log('Notificación abierta:', response);
     });
 
     return () => {
-      if (notificationListener.current) {
-        notificationListener.current.remove();
-      }
-      if (responseListener.current) {
-        responseListener.current.remove();
-      }
+      if (notificationListener.current) notificationListener.current.remove();
+      if (responseListener.current) responseListener.current.remove();
     };
   }, []);
 

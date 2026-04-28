@@ -82,126 +82,55 @@ export interface Category {
 }
 
 class FinanceService {
-  /**
-   * Reordena las cuentas del usuario.
-   */
   async reorderAccounts(ids: (number | string)[]): Promise<boolean> {
-    try {
-      await apiClient.patch(`${ENDPOINTS.FINANCE.ACCOUNTS}reorder/`, { ids });
-      return true;
-    } catch (error) {
-      console.error('Error reordering accounts:', error);
-      return false;
-    }
+    await apiClient.patch(`${ENDPOINTS.FINANCE.ACCOUNTS}reorder/`, { ids });
+    return true;
   }
 
-  /**
-   * Obtiene los detalles de una cuenta.
-   */
-  async getAccount(id: number | string): Promise<Account | null> {
-    try {
-      const response = await apiClient.get<Account>(`${ENDPOINTS.FINANCE.ACCOUNTS}${id}/`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching account detail:', error);
-      return null;
-    }
+  async getAccount(id: number | string): Promise<Account> {
+    const response = await apiClient.get<Account>(`${ENDPOINTS.FINANCE.ACCOUNTS}${id}/`);
+    return response.data;
   }
 
-  /**
-   * Actualiza una cuenta.
-   */
-  async updateAccount(id: number | string, data: any): Promise<Account | null> {
-    try {
-      const response = await apiClient.patch<Account>(`${ENDPOINTS.FINANCE.ACCOUNTS}${id}/`, data, {
-        headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error updating account:', error);
-      throw error;
-    }
+  async updateAccount(id: number | string, data: any): Promise<Account> {
+    const response = await apiClient.patch<Account>(`${ENDPOINTS.FINANCE.ACCOUNTS}${id}/`, data, {
+      headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
+    });
+    return response.data;
   }
-  /**
-   * Obtiene el resumen multimoneda del Dashboard.
-   * Nueva ruta modularizada: /finance/dashboard/summary/
-   */
-  async getDashboardSummary(): Promise<DashboardResponse | null> {
-    try {
-      const response = await apiClient.get<DashboardResponse>(ENDPOINTS.FINANCE.DASHBOARD_SUMMARY);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching dashboard summary:', error);
-      return null;
-    }
+  async getDashboardSummary(): Promise<DashboardResponse> {
+    const response = await apiClient.get<DashboardResponse>(ENDPOINTS.FINANCE.DASHBOARD_SUMMARY);
+    return response.data;
   }
 
-  /**
-   * Obtiene la lista de transacciones reales del usuario.
-   * Ruta modularizada: /transactions/
-   */
-  /**
-   * Obtiene la lista de transacciones reales del usuario.
-   * Ruta modularizada: /transactions/
-   */
   async getRecentTransactions(): Promise<Transaction[]> {
-    try {
-      const response = await apiClient.get<PaginatedResponse<Transaction>>(ENDPOINTS.TRANSACTIONS.BASE, {
-        params: { page_size: 10 }
-      });
-      const data = response.data?.results || [];
-      return data.map(tx => ({
-        ...tx,
-        display_title: tx.title || tx.notes || (tx.type === 'IN' ? 'Ingreso' : tx.type === 'EX' ? 'Gasto' : 'Transferencia'),
-        display_type: (tx.type === 'IN' ? 'income' : tx.type === 'EX' ? 'expense' : 'transfer') as 'income' | 'expense' | 'transfer',
-        display_icon: tx.type === 'IN' ? 'cash-outline' : tx.type === 'EX' ? 'cart-outline' : 'swap-horizontal-outline',
-      }));
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-      return [];
-    }
+    const response = await apiClient.get<PaginatedResponse<Transaction>>(ENDPOINTS.TRANSACTIONS.BASE, {
+      params: { page_size: 10 }
+    });
+    const data = response.data?.results || [];
+    return data.map(tx => ({
+      ...tx,
+      display_title: tx.title || tx.notes || (tx.type === 'IN' ? 'Ingreso' : tx.type === 'EX' ? 'Gasto' : 'Transferencia'),
+      display_type: (tx.type === 'IN' ? 'income' : tx.type === 'EX' ? 'expense' : 'transfer') as 'income' | 'expense' | 'transfer',
+      display_icon: tx.type === 'IN' ? 'cash-outline' : tx.type === 'EX' ? 'cart-outline' : 'swap-horizontal-outline',
+    }));
   }
 
-  /**
-   * Obtiene la lista de cuentas del usuario.
-   */
   async getAccounts(): Promise<Account[]> {
-    try {
-      const response = await apiClient.get<Account[]>(ENDPOINTS.FINANCE.ACCOUNTS);
-      const data = Array.isArray(response.data) ? response.data : [];
-      // Ordenar por display_order. Si no tiene, se manda al final (999).
-      return data.sort((a, b) => (a.display_order ?? 999) - (b.display_order ?? 999));
-    } catch (error) {
-      console.error('Error fetching accounts:', error);
-      return [];
-    }
+    const response = await apiClient.get<Account[]>(ENDPOINTS.FINANCE.ACCOUNTS);
+    const data = Array.isArray(response.data) ? response.data : [];
+    // Ordenar por display_order. Si no tiene, se manda al final (999).
+    return data.sort((a, b) => (a.display_order ?? 999) - (b.display_order ?? 999));
   }
 
-  /**
-   * Obtiene la lista de categorías del usuario.
-   */
   async getCategories(): Promise<Category[]> {
-    try {
-      const response = await apiClient.get<Category[]>(ENDPOINTS.FINANCE.CATEGORIES);
-      return Array.isArray(response.data) ? response.data : [];
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      return [];
-    }
+    const response = await apiClient.get<Category[]>(ENDPOINTS.FINANCE.CATEGORIES);
+    return Array.isArray(response.data) ? response.data : [];
   }
 
-  /**
-   * Obtiene la lista de monedas soportadas.
-   */
   async getCurrencies(): Promise<Currency[]> {
-    try {
-      const response = await apiClient.get<any[]>(ENDPOINTS.FINANCE.CURRENCIES);
-      const data = Array.isArray(response.data) ? response.data : [];
-      return data;
-    } catch (error) {
-      console.error('Error fetching currencies:', error);
-      return [];
-    }
+    const response = await apiClient.get<Currency[]>(ENDPOINTS.FINANCE.CURRENCIES);
+    return Array.isArray(response.data) ? response.data : [];
   }
 
   /**
