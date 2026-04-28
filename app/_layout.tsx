@@ -11,6 +11,7 @@ import * as SystemUI from 'expo-system-ui';
 import * as Notifications from 'expo-notifications';
 import { systemService } from '../services/systemService';
 import * as Application from 'expo-application';
+import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { Platform, KeyboardAvoidingView } from 'react-native';
 import { ForceUpdateScreen } from '../components/ForceUpdateScreen';
@@ -55,8 +56,58 @@ export default function RootLayout() {
           shouldShowList: true,
         }),
       });
+
+      // Registrar token de notificación
+      registerForPushNotificationsAsync();
+
+      // Listener para cuando se recibe una notificación mientras la app está abierta
+      const notificationListener = Notifications.addNotificationReceivedListener(notification => {
+        console.log('[NOTIF] Received:', notification);
+      });
+
+      // Listener para cuando el usuario toca la notificación
+      const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+        const data = response.notification.request.content.data;
+        console.log('[NOTIF] Response:', data);
+        
+        // Si recibimos una URL, intentamos abrirla en el navegador
+        if (data && typeof data === 'object' && 'url' in data) {
+          const url = data.url as string;
+          import('expo-linking').then(Linking => {
+            Linking.openURL(url);
+          });
+        }
+      });
+
+      return () => {
+        notificationListener.remove();
+        responseListener.remove();
+      };
     }
   }, []);
+
+  const registerForPushNotificationsAsync = async () => {
+    if (!Device.isDevice) return;
+
+    try {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      if (finalStatus !== 'granted') return;
+
+      const token = (await Notifications.getDevicePushTokenAsync()).data;
+      console.log('[NOTIF] Device Token:', token);
+      
+      // Enviamos el token al servidor
+      const platform = Platform.OS === 'ios' ? 'ios' : 'android';
+      await systemService.registerDeviceToken(token, platform);
+    } catch (e) {
+      console.error('[NOTIF] Error registering token:', e);
+    }
+  };
 
   const [loaded, error] = useFonts({
     Outfit_400Regular,
