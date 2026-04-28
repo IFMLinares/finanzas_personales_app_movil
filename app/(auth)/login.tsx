@@ -88,11 +88,13 @@ export default function LoginScreen() {
                 error={errors.password}
               />
 
-              <TouchableOpacity className="self-end mb-8">
-                <Typography variant="label" weight="bold" className="text-vault-usd">
-                  ¿Olvidaste tu contraseña?
-                </Typography>
-              </TouchableOpacity>
+              <Link href={"/forgot-password" as any} asChild>
+                <TouchableOpacity className="self-end mb-8">
+                  <Typography variant="label" weight="bold" className="text-vault-usd">
+                    ¿Olvidaste tu contraseña?
+                  </Typography>
+                </TouchableOpacity>
+              </Link>
 
               <Button
                 title="Iniciar sesión"
