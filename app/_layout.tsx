@@ -8,7 +8,6 @@ import 'react-native-reanimated';
 import '../global.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as SystemUI from 'expo-system-ui';
-import * as Notifications from 'expo-notifications';
 import { systemService } from '../services/systemService';
 import * as Application from 'expo-application';
 import * as Device from 'expo-device';
@@ -46,7 +45,17 @@ export default function RootLayout() {
 
   // Configurar notificaciones solo si NO estamos en Expo Go
   useEffect(() => {
-    if (Constants.appOwnership !== 'expo') {
+    if (Constants.appOwnership === 'expo') return;
+
+    let isMounted = true;
+    let notificationListener: { remove: () => void } | undefined;
+    let responseListener: { remove: () => void } | undefined;
+
+    const setupNotifications = async () => {
+      const Notifications = await import('expo-notifications');
+
+      if (!isMounted) return;
+
       Notifications.setNotificationHandler({
         handleNotification: async () => ({
           shouldShowAlert: true,
@@ -58,15 +67,15 @@ export default function RootLayout() {
       });
 
       // Registrar token de notificación
-      registerForPushNotificationsAsync();
+      registerForPushNotificationsAsync(Notifications);
 
       // Listener para cuando se recibe una notificación mientras la app está abierta
-      const notificationListener = Notifications.addNotificationReceivedListener(notification => {
+      notificationListener = Notifications.addNotificationReceivedListener(notification => {
         console.log('[NOTIF] Received:', notification);
       });
 
       // Listener para cuando el usuario toca la notificación
-      const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+      responseListener = Notifications.addNotificationResponseReceivedListener(response => {
         const data = response.notification.request.content.data;
         console.log('[NOTIF] Response:', data);
         
@@ -78,15 +87,20 @@ export default function RootLayout() {
           });
         }
       });
+    };
 
-      return () => {
-        notificationListener.remove();
-        responseListener.remove();
-      };
-    }
+    setupNotifications().catch(error => {
+      console.error('[NOTIF] Error setting up notifications:', error);
+    });
+
+    return () => {
+      isMounted = false;
+      notificationListener?.remove();
+      responseListener?.remove();
+    };
   }, []);
 
-  const registerForPushNotificationsAsync = async () => {
+  const registerForPushNotificationsAsync = async (Notifications: typeof import('expo-notifications')) => {
     if (!Device.isDevice) return;
 
     try {

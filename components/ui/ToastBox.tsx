@@ -101,7 +101,7 @@ export function ToastBox() {
             color={iconColors[currentType]} 
             style={styles.icon} 
           />
-          <Typography variant="body" weight="medium" style={styles.text}>
+          <Typography variant="body" weight="regular" style={styles.text}>
             {toast?.message}
           </Typography>
         </View>

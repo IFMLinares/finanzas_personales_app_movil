@@ -8,13 +8,14 @@ import { Typography } from '@/components/ui/Typography';
 import { CustomNumpad } from '@/components/ui/CustomNumpad';
 import { financeService } from '@/services/financeService';
 import { SelectModal } from '@/components/ui/SelectModal';
+import { appendMoneyDigit, deleteMoneyDigit } from '@/utils/moneyInput';
 
 type RateSource = 'BCV' | 'PARALLEL' | 'MANUAL';
 type OtherCurrency = 'USD' | 'EUR' | 'USDT';
 
 export default function CalculatorScreen() {
   const router = useRouter();
-  const [amount, setAmount] = useState('0');
+  const [amount, setAmount] = useState('0.00');
   const [isFromVes, setIsFromVes] = useState(false); // Default: USD -> VES
   const [otherCurrency, setOtherCurrency] = useState<OtherCurrency>('USD');
   const [rateSource, setRateSource] = useState<RateSource>('BCV');
@@ -35,30 +36,21 @@ export default function CalculatorScreen() {
     else if (rateSource === 'PARALLEL') setManualRate(parallelRate.toFixed(2));
   }, [rateSource, bcvRate, parallelRate]);
 
-  const currentRate = parseFloat(manualRate || '1');
+  const parsedRate = parseFloat(manualRate);
+  const currentRate = Number.isFinite(parsedRate) && parsedRate > 0 ? parsedRate : bcvRate;
   const val = parseFloat(amount || '0');
   const result = isFromVes ? val / currentRate : val * currentRate;
 
   const handleNumpadPress = (key: string) => {
-    if (key === '.' && amount.includes('.')) return;
-    if (amount === '0' && key !== '.') {
-      setAmount(key);
-    } else {
-      if (amount.includes('.')) {
-        const [, dec] = amount.split('.');
-        if (dec && dec.length >= 2) return;
-      }
-      setAmount(prev => prev + key);
-    }
+    setAmount(prev => key.split('').reduce((next, digit) => appendMoneyDigit(next, digit), prev));
   };
 
   const handleNumpadDelete = () => {
-    if (amount.length <= 1) setAmount('0');
-    else setAmount(prev => prev.slice(0, -1));
+    setAmount(prev => deleteMoneyDigit(prev));
   };
 
   const handleNumpadClear = () => {
-    setAmount('0');
+    setAmount('0.00');
   };
 
   const copyToClipboard = () => {
@@ -74,7 +66,7 @@ export default function CalculatorScreen() {
           <Ionicons name="chevron-back" size={24} color="white" />
         </TouchableOpacity>
         <Typography variant="h3" weight="bold" className="text-white">Calculadora</Typography>
-        <TouchableOpacity onPress={() => setAmount('0')}>
+        <TouchableOpacity onPress={() => setAmount('0.00')}>
           <Typography variant="label" weight="bold" className="text-blue-500">LIMPIAR</Typography>
         </TouchableOpacity>
       </View>

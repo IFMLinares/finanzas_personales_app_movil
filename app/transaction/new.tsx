@@ -7,12 +7,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Typography } from '@/components/ui/Typography';
 import { SelectModal } from '@/components/ui/SelectModal';
 import { CustomNumpad } from '@/components/ui/CustomNumpad';
+import { DatePickerBottomSheet } from '@/components/ui/DatePickerBottomSheet';
 import { CreateCategoryModal } from '@/components/ui/CreateCategoryModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { financeService, DashboardResponse } from '@/services/financeService';
 import { transactionService } from '@/services/transactionService';
 import { useToast } from '@/contexts/ToastContext';
 import { getCurrencySymbol } from '@/utils/formatters';
+import { appendMoneyDigit, deleteMoneyDigit, normalizeMoneyDisplay } from '@/utils/moneyInput';
 
 export default function NewTransactionScreen() {
   const router = useRouter();
@@ -21,10 +23,10 @@ export default function NewTransactionScreen() {
   const isEditing = !!id;
 
   const [type, setType] = useState<'IN' | 'EX' | 'TR'>((initialType as any) || 'EX');
-  const [amount, setAmount] = useState('0');
+  const [amount, setAmount] = useState('0.00');
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
-  const [date] = useState(new Date());
+  const [date, setDate] = useState(new Date());
 
   const { showToast } = useToast();
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -40,6 +42,7 @@ export default function NewTransactionScreen() {
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showDestinationAccountModal, setShowDestinationAccountModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [showCreateCategoryModal, setShowCreateCategoryModal] = useState(false);
 
   // Queries
@@ -100,9 +103,10 @@ export default function NewTransactionScreen() {
   useEffect(() => {
     if (isEditing && editingTx) {
       setType(editingTx.type);
-      setAmount(parseFloat(editingTx.amount.toString()).toFixed(2));
+      setAmount(normalizeMoneyDisplay(editingTx.amount));
       setTitle(editingTx.title || '');
       setNotes(editingTx.notes || '');
+      setDate(new Date(editingTx.date));
       
       if (editingTx.account_detail) {
         setSelectedAccount(editingTx.account_detail);
@@ -133,7 +137,7 @@ export default function NewTransactionScreen() {
   
   useEffect(() => {
     if (!isEditing && (pAmount || pCategory || pAccount || pTitle)) {
-      if (pAmount) setAmount(parseFloat(pAmount.toString()).toFixed(2));
+      if (pAmount) setAmount(normalizeMoneyDisplay(pAmount.toString()));
       if (pTitle) setTitle(pTitle.toString());
       if (pType) setType(pType as any);
 
@@ -184,7 +188,8 @@ export default function NewTransactionScreen() {
 
   const calculateDestinationAmount = () => {
     const val = parseFloat(amount || '0');
-    const rate = parseFloat(exchangeRate || '1');
+    const parsedRate = parseFloat(exchangeRate);
+    const rate = Number.isFinite(parsedRate) && parsedRate > 0 ? parsedRate : 1;
     if (!selectedAccount || !selectedDestinationAccount) return val.toFixed(2);
 
     const sourceCurrency = selectedAccount.currency_detail?.code;
@@ -200,32 +205,28 @@ export default function NewTransactionScreen() {
   };
 
   const handleNumpadPress = (key: string) => {
-    if (key === '.' && amount.includes('.')) return;
-    if (amount === '0' && key !== '.') {
-      setAmount(key);
-    } else {
-      if (amount.includes('.')) {
-        const [, dec] = amount.split('.');
-        if (dec && dec.length >= 2) return;
-      }
-      setAmount(prev => prev + key);
-    }
+    setAmount(prev => key.split('').reduce((next, digit) => appendMoneyDigit(next, digit), prev));
   };
 
   const handleNumpadDelete = () => {
-    if (amount.length <= 1) setAmount('0');
-    else setAmount(prev => prev.slice(0, -1));
+    setAmount(prev => deleteMoneyDigit(prev));
   };
 
   const handleNumpadClear = () => {
-    setAmount('0');
+    setAmount('0.00');
   };
+
+  const formattedDate = new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium' }).format(date);
 
   const handleSave = () => {
     let newErrors: Record<string, string> = {};
     if (!selectedAccount) newErrors.account = 'Debes seleccionar una cuenta';
     if (parseFloat(amount) <= 0) newErrors.amount = 'El monto debe ser mayor a 0';
     if (type === 'TR' && !selectedDestinationAccount) newErrors.destination_account = 'Selecciona la cuenta destino';
+    const parsedExchangeRate = parseFloat(exchangeRate);
+    if (type === 'TR' && (!Number.isFinite(parsedExchangeRate) || parsedExchangeRate <= 0)) {
+      newErrors.exchange_rate = 'La tasa debe ser mayor a 0';
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -252,7 +253,7 @@ export default function NewTransactionScreen() {
 
     if (isTransfer) {
       payload.destination_account = selectedDestinationAccount?.id;
-      payload.exchange_rate = parseFloat(exchangeRate);
+      payload.exchange_rate = parsedExchangeRate;
       payload.destination_amount = parseFloat(calculateDestinationAmount());
     }
 
@@ -334,6 +335,24 @@ export default function NewTransactionScreen() {
 
         {/* Dynamic Fields */}
         <View className="gap-3 mb-6">
+          <View>
+            <TouchableOpacity
+              onPress={() => setShowDatePicker(true)}
+              className="flex-row items-center justify-between border p-4 rounded-2xl bg-white/5 border-white/5"
+            >
+              <View className="flex-row items-center">
+                <View className="w-8 h-8 rounded-full bg-white/5 justify-center items-center mr-3">
+                  <Ionicons name="calendar-outline" size={16} color={accentColor} />
+                </View>
+                <View>
+                  <Typography variant="caption" className="text-gray-500 font-bold uppercase text-[10px]">Fecha</Typography>
+                  <Typography className="text-white" weight="semibold">{formattedDate}</Typography>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#4b5563" />
+            </TouchableOpacity>
+          </View>
+
           {!isTransfer && (
             <View>
               <TouchableOpacity
@@ -514,6 +533,13 @@ export default function NewTransactionScreen() {
         onClose={() => setShowCreateCategoryModal(false)}
         onSubmit={handleCreateCategory}
         type={type === 'IN' ? 'IN' : 'EX'}
+      />
+
+      <DatePickerBottomSheet
+        isVisible={showDatePicker}
+        onClose={() => setShowDatePicker(false)}
+        value={date}
+        onSelectDate={setDate}
       />
 
       <ConfirmModal

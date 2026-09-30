@@ -8,8 +8,10 @@ import { Typography } from '@/components/ui/Typography';
 import { CustomNumpad } from '@/components/ui/CustomNumpad';
 import { CreateCategoryModal } from '@/components/ui/CreateCategoryModal';
 import { SelectModal } from '@/components/ui/SelectModal';
+import { DatePickerBottomSheet } from '@/components/ui/DatePickerBottomSheet';
 import { financeService } from '@/services/financeService';
 import { transactionService } from '@/services/transactionService';
+import { appendMoneyDigit, deleteMoneyDigit } from '@/utils/moneyInput';
 
 export default function CreateTransactionScreen() {
   const router = useRouter();
@@ -18,7 +20,8 @@ export default function CreateTransactionScreen() {
   // Core State
   const [step, setStep] = useState<'amount' | 'details'>('amount');
   const [type, setType] = useState<'EX' | 'IN'>('EX');
-  const [amount, setAmount] = useState('0');
+  const [amount, setAmount] = useState('0.00');
+  const [date, setDate] = useState(new Date());
   const [inputCurrency, setInputCurrency] = useState<'USD' | 'VES'>('USD');
   const [bcvRate, setBcvRate] = useState(36.15); // Default, should load from API
 
@@ -27,6 +30,7 @@ export default function CreateTransactionScreen() {
   const [notes, setNotes] = useState('');
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showCreateCategoryModal, setShowCreateCategoryModal] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Queries
   const { data: dashboardData } = useQuery({
@@ -54,10 +58,13 @@ export default function CreateTransactionScreen() {
   useEffect(() => {
     // try to find a default category based on type or just pick the first one
     const applicableCategories = categories.filter(c => c.type === type);
-    if (applicableCategories.length > 0 && !selectedCategoryId) {
+    const selectedCategoryIsValid = applicableCategories.some(c => c.id === selectedCategoryId);
+    if (applicableCategories.length > 0 && !selectedCategoryIsValid) {
       setSelectedCategoryId(applicableCategories[0].id);
+    } else if (applicableCategories.length === 0 && selectedCategoryId) {
+      setSelectedCategoryId(null);
     }
-  }, [categories, type]);
+  }, [categories, selectedCategoryId, type]);
 
   useEffect(() => {
     if (dashboardData?.rates?.USD) {
@@ -80,34 +87,20 @@ export default function CreateTransactionScreen() {
   });
 
   const handleNumpadPress = (key: string) => {
-    if (key === '.' && amount.includes('.')) return;
-    if (amount === '0' && key !== '.') {
-      setAmount(key);
-    } else {
-      if (amount.includes('.')) {
-        const [, decimalStr] = amount.split('.');
-        if (decimalStr && decimalStr.length >= 2) return;
-      }
-      if (amount.length > 9) return;
-      setAmount(prev => prev + key);
-    }
+    setAmount(prev => key.split('').reduce((next, digit) => appendMoneyDigit(next, digit), prev));
   };
 
   const handleNumpadDelete = () => {
-    if (amount.length <= 1) {
-      setAmount('0');
-    } else {
-      setAmount(prev => prev.slice(0, -1));
-    }
+    setAmount(prev => deleteMoneyDigit(prev));
   };
 
   const handleNumpadClear = () => {
-    setAmount('0');
+    setAmount('0.00');
   };
 
   const toggleCurrency = () => {
     setInputCurrency(prev => prev === 'USD' ? 'VES' : 'USD');
-    setAmount('0'); 
+    setAmount('0.00');
   };
 
   const numericAmount = parseFloat(amount) || 0;
@@ -126,6 +119,12 @@ export default function CreateTransactionScreen() {
       return;
     }
 
+    const selectedCategoryIsValid = categories.some(c => c.id === selectedCategoryId && c.type === type);
+    if (!selectedCategoryIsValid) {
+      Alert.alert('Incompleto', 'Selecciona una categoría válida.');
+      return;
+    }
+
     let baseAmountUsd = numericAmount;
     if (inputCurrency === 'VES') {
       baseAmountUsd = numericAmount / bcvRate;
@@ -136,7 +135,7 @@ export default function CreateTransactionScreen() {
       category: selectedCategoryId,
       type,
       amount: parseFloat(baseAmountUsd.toFixed(2)),
-      date: new Date().toISOString(),
+      date: date.toISOString(),
       notes: notes || null,
     });
   };
@@ -167,6 +166,7 @@ export default function CreateTransactionScreen() {
     ? (numericAmount * bcvRate).toFixed(2) 
     : (numericAmount / bcvRate).toFixed(2);
   const secondarySymbol = inputCurrency === 'USD' ? 'BS' : '$';
+  const formattedDate = new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium' }).format(date);
 
   return (
     <SafeAreaView className="flex-1 bg-gray-950">
@@ -294,7 +294,7 @@ export default function CreateTransactionScreen() {
                </ScrollView>
              )}
 
-             {/* Categorías */}
+              {/* Categorías */}
              <Typography variant="h3" weight="bold" className="mb-4 text-white">¿En qué se usó?</Typography>
              {loadingCategories ? (
                <ActivityIndicator color={colorBase} />
@@ -332,9 +332,23 @@ export default function CreateTransactionScreen() {
                    <Typography variant="caption" className="text-ink-tertiary">Nueva</Typography>
                  </TouchableOpacity>
                </View>
-             )}
+              )}
 
-           </ScrollView>
+              <Typography variant="h3" weight="bold" className="mb-4 text-white">Fecha</Typography>
+              <TouchableOpacity
+                onPress={() => setShowDatePicker(true)}
+                className="mb-8 flex-row items-center justify-between bg-white/5 border border-white/10 p-5 rounded-2xl"
+              >
+                <View className="flex-row items-center">
+                  <View className="w-10 h-10 rounded-xl bg-white/5 justify-center items-center mr-4">
+                    <Ionicons name="calendar-outline" size={20} color={colorBase} />
+                  </View>
+                  <Typography weight="bold" className="text-white">{formattedDate}</Typography>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#475569" />
+              </TouchableOpacity>
+
+            </ScrollView>
 
            <View className="pb-8 pt-4">
             <TouchableOpacity 
@@ -378,6 +392,13 @@ export default function CreateTransactionScreen() {
         onClose={() => setShowCreateCategoryModal(false)}
         onSubmit={handleCreateCategory}
         type={type}
+      />
+
+      <DatePickerBottomSheet
+        isVisible={showDatePicker}
+        onClose={() => setShowDatePicker(false)}
+        value={date}
+        onSelectDate={setDate}
       />
     </SafeAreaView>
   );

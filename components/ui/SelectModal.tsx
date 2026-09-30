@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, TouchableOpacity, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Typography } from './Typography';
 import { BaseBottomSheet } from './BaseBottomSheet';
@@ -36,6 +37,7 @@ export function SelectModal({
   onFooterPress
 }: SelectModalProps) {
   const [expandedParents, setExpandedParents] = useState<Record<string | number, boolean>>({});
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (isVisible) {
@@ -69,7 +71,12 @@ export function SelectModal({
       maxHeight="85%"
     >
       <View className="px-8 mb-4">
-        <ScrollView showsVerticalScrollIndicator={false} className="gap-3">
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          className="gap-3"
+          style={{ maxHeight: '70%' }}
+          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) }}
+        >
           {visibleOptions.map((option) => {
             const isSelected = selectedValue === option.id;
             const isParent = option.hasChildren;
