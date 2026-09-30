@@ -20,6 +20,9 @@ export const ENDPOINTS = {
     BASE: '/transactions/',
     PLANS: '/transactions/plans/',
   },
+  AUTOMATION: {
+    RECURRING_EXPENSES: '/automation/recurring/',
+  },
 };
 
 export default ENDPOINTS;
